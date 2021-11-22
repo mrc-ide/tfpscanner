@@ -596,7 +596,7 @@ message(paste('Starting scan', Sys.time()) , '\n')
 
 
 
-#'
+#' Run a fast treedater/mlesky analysis for a given node in the scanner output
 #'
 #' @export 
 get_clusternode_mlesky <- function( u=406318 , scanner_env=readRDS("scanner-env-2021-03-03.rds")) 
