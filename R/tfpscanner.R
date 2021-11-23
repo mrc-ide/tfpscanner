@@ -3,8 +3,8 @@
 #' Takes standard inputs in the form of a rooted phylogeny and data frame with required metadata (see below). 
 #' Computes a logistic growth rate and a statistic for outlying values in a molecular clock (root to tip regression).
 #' Comparison sample is matched by time and region.
-#' 
-#' add optional 'sample_weight' to metadata, use in regression models 
+#' If using parallel computation (ncpu>1), the code should be called via mpirun, e.g. 
+#' mpirun -n <ncpu+1> R --slave -f <script> 
 #' 
 #' @param tre A phylogeny in ape::phylo or treeio::treedata form. If not rooted, must provide an outgroup (see below)
 #' @param amd A data frame containing required metadata for each tip in tree: sequence_name, sample_date, region. Optional metadata includes: sample_time(numeric), lineage, mutations. 
@@ -49,9 +49,13 @@ message(paste('Starting scan', Sys.time()) , '\n')
 	library( glue ) 
 	library( mgcv )
 	library( ggplot2 )
-	
 	library( ggtree ) 
 	library( phangorn )
+	
+	if (ncpu > 1){
+		library( foreach )
+		library( doMPI )
+	}
 	
 	
 	if (!dir.exists( output_dir ))
@@ -490,9 +494,85 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		}
 		gtr2
 	}
-
+		
 	
-	# main 
+	# all analyses for a particular node 
+	.process.node <- function(u)
+	{
+		tu = descendantSids[[u]]
+		ta = .get_comparator_sample(u) 
+		ulins <- amd$lineage[ match( tu, amd$sequence_name)]
+		alins <- amd$lineage[ match( ta, amd$sequence_name)]
+		lgs = .logistic_growth_stat ( u, ta )
+		best_gr = lgs$growthrates[ which.max(lgs$relative_model_support) ]
+		
+		reg_summary = tryCatch( .region_summary( tu ), error = function(e) as.character(e))
+		cocirc_summary = tryCatch( .lineage_summary( ta ), error = function(e) as.character(e))
+		lineage_summary = tryCatch( .lineage_summary( tu ) , error = function(e) as.character(e) )
+		
+		a = .get_comparator_ancestor(u)
+		cmut = .cluster_muts( u, a )
+		
+		X = data.frame( cluster_id = as.character(u) 
+		 , node_number = u 
+		 , parent_number = ifelse( is.null(ancestors[[u]] ), NA, tail( ancestors[[u]], 1 ) ) 
+		 , most_recent_tip = as.Date( date_decimal( max( na.omit(sts[ tu ])  ) ) )
+		 , least_recent_tip = as.Date( date_decimal( min( na.omit( sts[ tu ])  ) ) )
+		 , cluster_size = length( tu )
+		 , logistic_growth_rate = best_gr
+		 , logistic_growth_rate_p = lgs$lgrp
+		 , simple_logistic_growth_rate = lgs$lgr
+		 , gam_logistic_growth_rate = lgs$gam_r 
+		 , simple_logistic_model_support = lgs$relative_model_support[ 'Logistic' ] 
+		 , clock_outlier = .clock_outlier_stat(u, a )
+		 , lineage = paste( names(sort(table(ulins),decreasing=TRUE)) , collapse = '|' )
+		 , lineage_summary = lineage_summary 
+		 , cocirc_lineage_summary = cocirc_summary
+		 , region_summary = reg_summary 
+		 , external_cluster = !(u %in% node_ancestors ) 
+		 , tips = paste( tu, collapse = '|' )
+		 , defining_mutations = paste(cmut$defining , collapse = '|' )
+		 , all_mutations = paste(cmut$all, collapse = '|') 
+		 , stringsAsFactors=FALSE
+		)
+		if ( u %in% report_nodes ) { # print progress 
+			i <- which( nodes == u )
+			message(paste( 'Progress' , round(100*i / length( nodes )),  '%') ) 
+		}
+		rownames(X) <- as.character(u) 
+		
+		cldir = glue( '{output_dir}/{as.character(u)}'  ) 
+		dir.create( cldir  , showWarnings=FALSE)
+		# summary stat data 
+		write.csv( data.frame( statistic = t(X[1 , c('logistic_growth_rate', 'simple_logistic_growth_rate', 'logistic_growth_rate_p', 'gam_logistic_growth_rate', 'simple_logistic_model_support', 'clock_outlier') ] ) ) , file =  glue( '{cldir}/summary.csv' ) )
+		# freq plot 
+		suppressMessages( ggsave( lgs$plot, file =  glue( '{cldir}/frequency.pdf' )) )
+		suppressMessages( ggsave( lgs$plot, file =  glue( '{cldir}/frequency.png' ), bg = 'white') )
+		# tree plot 
+		if ( length(tu) < 1e3 ){
+			gtr = .cluster_tree( tu )
+			suppressMessages( 
+				ggsave( gtr, file = glue( '{cldir}/clustertree.pdf' )
+					, height = floor( length(tu)  / 5 ) 
+					, width = max( 8 , sqrt(length(tu)) ) 
+					, limitsize = FALSE  
+				)
+			)
+		}
+		# clock figure TODO 
+		# tip table 
+		write.csv( amd[ amd$sequence_name %in% tu, ], file = glue( '{cldir}/sequences.csv' ))
+		# reg summary
+		write.csv( reg_summary, file = glue( '{cldir}/regional_composition.csv' ))
+		# lineage summary 
+		write.csv( lineage_summary, file = glue( '{cldir}/lineage_composition.csv' ))
+		# cocirc lineage summary 
+		write.csv( cocirc_summary, file = glue( '{cldir}/cocirculating_lineages.csv' ))
+		
+		X
+	}
+	
+	# main analysis thread 
 	## compute stats for subset of nodes based on size and age 
 	nodes = which(  (ndesc >= min_descendants)   &   (ndesc <= max_descendants) & (clade_age >= min_cluster_age_yrs)   )
 	nodes_blenConstraintSatisfied <- tre$edge[ tre$edge.length > min_blen , 2]
@@ -500,83 +580,26 @@ message(paste('Starting scan', Sys.time()) , '\n')
 	report_nodes <- nodes[ seq(1, length(nodes), by = report_freq) ] #progress reporting 
 	node_ancestors <- do.call( c, lapply( nodes, function(u) ancestors[[u]] ))
 	if ( ncpu > 1){
-		stop('not implemented')
+		message( 'Initiating MPI cluster' )
+		mpiclust = startMPIcluster( count = ncpu )
+		registerDoMPI( mpiclust )
+		foreach(u=nodes
+			, .combine = rbind
+			, .packages=c('lubridate', 'glue', 'mgcv', 'ggplot2', 'ggtree', 'phangorn')
+			#, .export=c('output_dir')
+			, .errorhandling='remove'
+			, .verbose=TRUE
+		) %dopar% {
+			tryCatch( .process.node(u) 
+			, error = function(e) { saveRDS(e, file=glue('{u}-err.rds')); return(e) } )
+		} -> Y 
 	} else{
 		Y <- c()
 		for ( u in nodes ){
-			tu = descendantSids[[u]]
-			ta = .get_comparator_sample(u) 
-			ulins <- amd$lineage[ match( tu, amd$sequence_name)]
-			alins <- amd$lineage[ match( ta, amd$sequence_name)]
-			lgs = .logistic_growth_stat ( u, ta )
-			best_gr = lgs$growthrates[ which.max(lgs$relative_model_support) ]
-			
-			reg_summary = tryCatch( .region_summary( tu ), error = function(e) as.character(e))
-			cocirc_summary = tryCatch( .lineage_summary( ta ), error = function(e) as.character(e))
-			lineage_summary = tryCatch( .lineage_summary( tu ) , error = function(e) as.character(e) )
-			
-			a = .get_comparator_ancestor(u)
-			cmut = .cluster_muts( u, a )
-			
-			X = data.frame( cluster_id = as.character(u) 
-			 , node_number = u 
-			 , parent_number = ifelse( is.null(ancestors[[u]] ), NA, tail( ancestors[[u]], 1 ) ) 
-			 , most_recent_tip = as.Date( date_decimal( max( na.omit(sts[ tu ])  ) ) )
-			 , least_recent_tip = as.Date( date_decimal( min( na.omit( sts[ tu ])  ) ) )
-			 , cluster_size = length( tu )
-			 , logistic_growth_rate = best_gr
-			 , logistic_growth_rate_p = lgs$lgrp
-			 , simple_logistic_growth_rate = lgs$lgr
-			 , gam_logistic_growth_rate = lgs$gam_r 
-			 , simple_logistic_model_support = lgs$relative_model_support[ 'Logistic' ] 
-			 , clock_outlier = .clock_outlier_stat(u, a )
-			 , lineage = paste( names(sort(table(ulins),decreasing=TRUE)) , collapse = '|' )
-			 , lineage_summary = lineage_summary 
-			 , cocirc_lineage_summary = cocirc_summary
-			 , region_summary = reg_summary 
-			 , external_cluster = !(u %in% node_ancestors ) 
-			 , tips = paste( tu, collapse = '|' )
-			 , defining_mutations = paste(cmut$defining , collapse = '|' )
-			 , all_mutations = paste(cmut$all, collapse = '|') 
-			 , stringsAsFactors=FALSE
-			)
-			if ( u %in% report_nodes ) { # print progress 
-				i <- which( nodes == u )
-				message(paste( 'Progress' , round(100*i / length( nodes )),  '%') ) 
-			}
-			rownames(X) <- as.character(u)  
+			X = .process.node(u) 
 			Y <- rbind( Y, X )
-			
-			cldir = glue( '{output_dir}/{as.character(u)}'  ) 
-			dir.create( cldir  , showWarnings=FALSE)
-			# summary stat data 
-			write.csv( data.frame( statistic = t(X[1 , c('logistic_growth_rate', 'simple_logistic_growth_rate', 'logistic_growth_rate_p', 'gam_logistic_growth_rate', 'simple_logistic_model_support', 'clock_outlier') ] ) ) , file =  glue( '{cldir}/summary.csv' ) )
-			# freq plot 
-			suppressMessages( ggsave( lgs$plot, file =  glue( '{cldir}/frequency.pdf' )) )
-			suppressMessages( ggsave( lgs$plot, file =  glue( '{cldir}/frequency.png' ), bg = 'white') )
-			# tree plot 
-			if ( length(tu) < 2e3 ){
-				gtr = .cluster_tree( tu )
-				suppressMessages( 
-					ggsave( gtr, file = glue( '{cldir}/clustertree.pdf' )
-						, height = floor( length(tu)  / 5 ) 
-						, width = max( 8 , sqrt(length(tu)) ) 
-						, limitsize = FALSE  
-					)
-				)
-			}
-			# clock figure TODO 
-			# tip table 
-			write.csv( amd[ amd$sequence_name %in% tu, ], file = glue( '{cldir}/sequences.csv' ))
-			# reg summary
-			write.csv( reg_summary, file = glue( '{cldir}/regional_composition.csv' ))
-			# lineage summary 
-			write.csv( lineage_summary, file = glue( '{cldir}/lineage_composition.csv' ))
-			# cocirc lineage summary 
-			write.csv( cocirc_summary, file = glue( '{cldir}/cocirculating_lineages.csv' ))
 		}
 	}
-	
 	if ( ! all( nodes %in% Y$node_number)){
 		stop('Statistics not computed for all nodes. Possible that memory exceeded with ncpu > 1. Try with ncpu = 1.') 
 	}
@@ -590,6 +613,11 @@ message(paste('Starting scan', Sys.time()) , '\n')
 	e0 = environment() 
 	saveRDS(e0, file=ofn3)
 	message( glue( 'Data written to {ofn1} and {ofn3}. Returning data frame invisibly.'  ) )
+	
+	if ( ncpu  > 1 ) {
+		closeCluster( mpiclust )
+		mpi.finalize()
+	}
 	invisible(Y) 
 }
 
