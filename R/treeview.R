@@ -383,7 +383,7 @@ treeview <- function( e0
 		)
 	)
 	
-	pl
+	invisible( pl )
 }
 
 #~ treeview( e0 = 'tfpscan-2021-11-25/scanner-env-2021-11-25.rds'

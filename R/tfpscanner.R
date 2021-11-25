@@ -21,6 +21,8 @@
 #' @param Tg Approximate generation time in years. Growth rate is reported in these units. 
 #' @param report_freq Print progress for every n'th node 
 #' @param mutation_cluster_frequency_threshold If mutation is detected with more than this frequency within a cluster it may be called as a defining mutation
+#' @param test_cluster_odds A character vector of variable names in \code{amd}. The odds of a sample belonging to each cluster given tis variable will be estimated using conditional logistic regression and adjusting for time. 
+#' @param test_cluster_odds_values Vector of same length as \code{test_cluster_odds}. This variable will be dichotomised by testing for equality of the variable with this value (e.g. vaccine_breakthrough == 'yes'). If NULL, the variable is assumed to be continuous (e.g. patient_age). 
 #' @param root_on_tip If input tree is not rooted, will root on this tip 
 #' @param root_on_tip_sample_time Numeric time that tip was sampled
 #' @return Invisibly returns a data frame with cluster statistics. 
@@ -40,6 +42,8 @@ tfpscan <- function(tre
  , Tg = 7/365
  , report_freq = 50 
  , mutation_cluster_frequency_threshold = 0.75
+ , test_cluster_odds = c() 
+ , test_cluster_odds_value = c() 
  , root_on_tip = 'Wuhan/WH04/2020'
  , root_on_tip_sample_time = 2020 
 )
@@ -93,7 +97,7 @@ message(paste('Starting scan', Sys.time()) , '\n')
 	sts <- setNames( amd$sample_time , amd$sequence_name )
 	
 	# retain only required variables 
-	amd <- amd[ , c('sequence_name', 'sample_time', 'sample_date', 'region', 'lineage', 'mutations') ] 
+	#amd <- amd[ , unique( c('sequence_name', 'sample_time', 'sample_date', 'region', 'lineage', 'mutations', test_cluster_odds) ) ] 
 	amd <- amd [ amd$sequence_name %in% tre$tip.label ,  ] 
 	
 	# prune tree
@@ -220,27 +224,31 @@ message(paste('Starting scan', Sys.time()) , '\n')
 	# matched by time and in proportion to region prevalence
 	.get_comparator_sample <- function( u , nX = factor_geo_comparison ) 
 	{
-		# weight for region 
-		 w = table ( amd$region[ match( descendantSids[[u]]  , amd$sequence_name ) ]  )  
-		 w = w [ names(w)!='' ]
-		 w = w / sum( w ) 
-		 
-		 nu <- ndesc[u] 
-		 tu =  descendantSids[[u]] 
-		 stu = sts[ tu ]
+		nu <- ndesc[u] 
+		tu =  descendantSids[[u]] 
+		stu = sts[ tu ]
 		#~ 		 stu = descsts [[ u ]]
-		 minstu = min(na.omit(stu ))
-		 maxstu = max(na.omit(stu) )
-		 
-		 amd1 = amd[ (amd$sample_time >= minstu) & (amd$sample_time <= maxstu), c('sequence_name', 'sample_date', 'region') ]
-		 amd1 <- amd1[ !(amd1$sequence_name %in% tu) , ]
-		 amd1 <- amd1[ amd1$region %in% names( w ) , ]
-		 na = min ( nrow( amd1 ) , nu * nX )
-		 if ( na < nu ) 
+		minstu = min(na.omit(stu ))
+		maxstu = max(na.omit(stu) )
+		
+		# df for all tips outside of tu overlapping in time and region
+		amd1 = amd[ (amd$sample_time >= minstu) & (amd$sample_time <= maxstu),  ] #c('sequence_name', 'sample_date', 'region')
+		amd1 <- amd1[ !(amd1$sequence_name %in% tu) , ]
+		amd1 <- amd1[ amd1$region %in% unique(amd$region[ amd$sequence_name %in% tu]) , ]
+		
+		
+		# weight for region 
+		w = table ( amd$region[ match( descendantSids[[u]]  , amd$sequence_name ) ]  )  
+		w <- w/ (table(amd1$region)[names(w)])
+		w[ is.na(w) ] <- 0 
+		
+		na = min ( nrow( amd1 ) , nu * nX )
+		if ( na < nu ) 
 			return ( NULL )
-		 amd1$w = w[ amd1$region ] 
-		 ta = sample( amd1$sequence_name, replace=FALSE, size = na , prob = amd1$w ) 
-		 ta
+		amd1$w = w[ amd1$region ] 
+		amd1 <- amd1[ !is.na( amd1$w ) , ]
+		ta = sample( amd1$sequence_name, replace=FALSE, size = na , prob = amd1$w ) 
+		ta
 	}
 	
 	.freq_figure <- function(.s1, variable = 'type', value = 'clade' )
@@ -342,15 +350,12 @@ message(paste('Starting scan', Sys.time()) , '\n')
 	
 	# Compute 'proportionality' statistics for node (u) and given variable (var)
 	# e.g. if sample is from vaccine breakthrough, is there higher odds that sample is in clade?
-	.var_proportionality_stat <- function (u, var = 'breakthrough2'
+	.var_proportionality_stat <- function (u, ta
+	 , var = 'breakthrough2' , value=TRUE
 	 , f = clade ~ time + var 
 	 , form_index = 3 
-	 , value=TRUE, ta = NULL) 
+	) 
 	{
-		if (is.null(ta)) 
-			ta = .get_comparator_sample(u)
-		if (is.null(ta)) 
-			return(0)
 		tu = descendantSids[[u]]
 		sta = sts[ta]
 		stu = sts[tu]
@@ -358,11 +363,13 @@ message(paste('Starting scan', Sys.time()) , '\n')
 					, time = c(sta, stu)
 					, type = c(rep("control", length(ta)), rep("clade", length(tu)))
 		)
-		X$var <- (amd[[var]][match(X$tip, amd$sequence_name)]==value)
-		X$clade <- (X$type == 'clade' )
+		X$var <- (amd[[var]][match(X$tip, amd$sequence_name)] )
+		if (!is.null( value )){
+			X$var <- ( X$var == value )
+		}
+		X$clade <- (X$type == 'clade')
 		
-		#m = glm(  var ~ time + (type=='clade'), data = X, family = binomial(link = "logit"))
-		m = glm(  f, data = X, family = binomial(link = "logit"))
+		m = glm(f, data = X, family = binomial(link = "logit"))
 		s = summary(m)
 		rv = unname(coef(m)[form_index])
 		p = NA
@@ -372,7 +379,7 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		else {
 			p = s$coefficients[form_index, 4]
 		}
-		c(rv, p)
+		setNames( c(rv, p), paste(sep = '_', var, c('logodds', 'p') ) )
 	}
 	
 	.cluster_muts <- function(u,a = NULL, mut_variable = 'mutations') 
@@ -536,11 +543,17 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		 , all_mutations = paste(cmut$all, collapse = '|') 
 		 , stringsAsFactors=FALSE
 		)
+		for (i in seq_along(test_cluster_odds)) {
+			vn = test_cluster_odds[i]
+			val = test_cluster_odds_value[i]
+			clodds = .var_proportionality_stat( u, ta, var = vn , value = val )
+			X <- cbind( X, t( clodds ) )
+		}
+		rownames(X) <- as.character(u) 
 		if ( u %in% report_nodes ) { # print progress 
 			i <- which( nodes == u )
 			message(paste( 'Progress' , round(100*i / length( nodes )),  '%') ) 
 		}
-		rownames(X) <- as.character(u) 
 		
 		cldir = glue( '{output_dir}/{as.character(u)}'  ) 
 		dir.create( cldir  , showWarnings=FALSE)

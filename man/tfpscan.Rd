@@ -20,6 +20,8 @@ tfpscan(
   Tg = 7/365,
   report_freq = 50,
   mutation_cluster_frequency_threshold = 0.75,
+  test_cluster_odds = c(),
+  test_cluster_odds_value = c(),
   root_on_tip = "Wuhan/WH04/2020",
   root_on_tip_sample_time = 2020
 )
@@ -55,9 +57,13 @@ tfpscan(
 
 \item{mutation_cluster_frequency_threshold}{If mutation is detected with more than this frequency within a cluster it may be called as a defining mutation}
 
+\item{test_cluster_odds}{A character vector of variable names in \code{amd}. The odds of a sample belonging to each cluster given tis variable will be estimated using conditional logistic regression and adjusting for time.}
+
 \item{root_on_tip}{If input tree is not rooted, will root on this tip}
 
 \item{root_on_tip_sample_time}{Numeric time that tip was sampled}
+
+\item{test_cluster_odds_values}{Vector of same length as \code{test_cluster_odds}. This variable will be dichotomised by testing for equality of the variable with this value (e.g. vaccine_breakthrough == 'yes'). If NULL, the variable is assumed to be continuous (e.g. patient_age).}
 }
 \value{
 Invisibly returns a data frame with cluster statistics.
