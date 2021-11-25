@@ -23,6 +23,7 @@
 #' @param mutation_cluster_frequency_threshold If mutation is detected with more than this frequency within a cluster it may be called as a defining mutation
 #' @param root_on_tip If input tree is not rooted, will root on this tip 
 #' @param root_on_tip_sample_time Numeric time that tip was sampled
+#' @return Invisibly returns a data frame with cluster statistics. 
 #' @export
 tfpscan <- function(tre
  , amd
@@ -110,6 +111,7 @@ message(paste('Starting scan', Sys.time()) , '\n')
 	tre <- keep.tip( tre, intersect( tre$tip.label , amd$sequence_name )  )
 	tr2 = tre 
 	if ( !is.rooted(tre )){
+		stopifnot( root_on_tip %in% tre$tip.label )
 		if (  !( root_on_tip %in% tre$tip.label ) )  {
 			stop('Outgroup sequence missing from input tree.')
 		}
@@ -335,8 +337,7 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		m = lm ( ndela ~ sta ) 
 		r2 = summary( m )$r.squared
 		oosp = predict(m, newdata =  data.frame(sta = unname( stu )) )  -  ndelu
-		#mean( oosp) / sqrt( mean( (predict(m) - ndela )^2 ) )
-		sqrt( mean( oosp^2 )  )
+		sqrt( mean( oosp^2 )  ) * sign( mean(oosp) )
 	}
 	
 	# Compute 'proportionality' statistics for node (u) and given variable (var)
@@ -586,7 +587,7 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		foreach(u=nodes
 			, .combine = rbind
 			, .packages=c('lubridate', 'glue', 'mgcv', 'ggplot2', 'ggtree', 'phangorn')
-			#, .export=c('output_dir')
+			, .export=c('output_dir')
 			, .errorhandling='remove'
 			, .verbose=TRUE
 		) %dopar% {

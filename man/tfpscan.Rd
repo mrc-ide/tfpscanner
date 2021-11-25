@@ -59,6 +59,9 @@ tfpscan(
 
 \item{root_on_tip_sample_time}{Numeric time that tip was sampled}
 }
+\value{
+Invisibly returns a data frame with cluster statistics.
+}
 \description{
 Takes standard inputs in the form of a rooted phylogeny and data frame with required metadata (see below). 
 Computes a logistic growth rate and a statistic for outlying values in a molecular clock (root to tip regression).

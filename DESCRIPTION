@@ -6,7 +6,7 @@ Date: 2021-11-22
 Author: Erik Volz, Olivia Boyd
 Maintainer: Erik Volz <e.volz@imperial.ac.uk>
 Description: A pipeline for scanning a SARS-CoV-2 phylogeny for clades with outlying growth patterns and high evolutionary rates
-Depends: ape,lubridate,mgcv,glue,ggplot2,ggtree
+Depends: ape,lubridate,mgcv,glue,ggplot2,ggtree,ggiraph,scales,phangorn,knitr,stringr,htmlwidgets,dplyr
 Suggests: mlesky,treedater,foreach,doMPI
 License: MIT
 RoxygenNote: 7.0.2
