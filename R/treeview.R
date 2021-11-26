@@ -33,11 +33,14 @@ treeview <- function( e0
 	sc0 <- e0$Y 
 	cmuts = lapply( 1:nrow(sc0), function(i){
 		list( 
-		defining = strsplit( sc0$all_mutations, split = '\\|' )[[1]]
-		, all = strsplit( sc0$defining_mutations, split = '\\|' )[[1]] 
+		defining = strsplit( sc0$all_mutations[i], split = '\\|' )[[1]]
+		, all = strsplit( sc0$defining_mutations[i], split = '\\|' )[[1]] 
 		)
 	})
+	names( cmuts )<- sc0$cluster_id
 	tr1 <- e0$tre
+	
+	stopifnot( all( branch_cols %in% colnames( e0$Y )) )
 	
 	# pick one tip from each cluster 
 	sc0$representative = NA 
@@ -135,29 +138,22 @@ treeview <- function( e0
 	lin_nodes = c() 
 	lin_node_names <- c() 
 	for (lin in lins){
-		pclin0 <- sapply( stres2, function(tr) {
-			sum( na.omit(sc0$lineage1[ match( tr$tip.label, sc0$representative ) ]) == lin ) / tablin[lin] 
-		})
-		pclin1 <- sapply( stres2, function(tr) {
-			sum( na.omit(sc0$lineage1[ match( tr$tip.label, sc0$representative ) ]) == lin ) / Ntip(tr)
-		})
-		pclin <- ( pclin0 * pclin1 )^(1/2)
-		#pclin <- pmin( pclin0, pclin1 )
-		pclin [ is.na( pclin ) ] <- 0
-		wx <- which(pclin > .80)
-		if ( length( wx ) == 0 )
-			wx <- which(pclin > .35)
-		
-		if ( length( wx ) == 0 ){
-			res = NA
+		whichrep = na.omit( sc0$representative[ sc0$lineage1==lin ]  ) 
+		if ( length( whichrep) == 1){
+			res = which( tr2$tip.label == whichrep )
 		}else{
-			res = wx[ which.max( Nstres2[ wx ] ) ] + Ntip( tr2 )
+			res = getMRCA( tr2, whichrep )
 		}
-		lin_nodes <- c( lin_nodes, res )
-		lin_node_names <- c( lin_node_names, lin )
+		if ( !is.null(res)){
+			lin_nodes <- c( lin_nodes, res )
+			lin_node_names <- c( lin_node_names, lin )
+		}
+		#lin_node_names <- lin_node_names[!duplicated(lin_nodes) ]
+		#lin_nodes <- lin_nodes[!duplicated(lin_nodes) ]
+		
+		res
 	}
-
-
+	
 	# make and save the tree view 
 	.plot_tree <- function (vn , mut_regex = NULL , colour_limits = NULL )
 	{
@@ -168,10 +164,11 @@ treeview <- function( e0
 		
 		shapes = c( Y = '\U2B24', N = '\U25C4' )
 		gtr1.1 <- gtr1 +
-		 scale_color_gradientn( colours  = cols, limits = colour_limits, oob = scales::squish ) + 
-		 geom_point( aes_string(color = vn, size = 'cluster_size', shape = 'as.factor(internal)'),  alpha = .5, data = gtr1$data) + scale_shape_manual( values = shapes ) +
-		 scale_size(range = c(2, 16)) + 
-		 ggtitle( glue( '{Sys.Date()}, colour: {vn}')  ) # + theme(legend.position='top left' )
+		 scale_color_gradientn( name = gsub(vn, patt = '_', rep = ' '), colours  = cols, limits = colour_limits, oob = scales::squish ) + 
+		 geom_point( aes_string(color = vn, size = 'cluster_size', shape = 'as.factor(internal)'),  data = gtr1$data) + 
+		 scale_shape_manual( name = NULL, labels = NULL, values = shapes ) +
+		 scale_size(name = 'Cluster size', range = c(2, 16)) + 
+		 ggtitle( glue( '{Sys.Date()}, colour: {vn}')  )  + theme(legend.position='top' )
 		
 		for( i in  seq_along(lins) ){
 			if ( !is.na( lin_nodes[i] ) ) {
@@ -179,7 +176,10 @@ treeview <- function( e0
 			}
 		}
 		
-		ggsave( gtr1.1, file = glue('{output_dir}/tree-{vn}-{Sys.Date()}.svg') ,  height = floor( Ntip( tr2 ) / 16 ), width = 16 , limitsize = FALSE )
+		ggsave( gtr1.1, file = glue('{output_dir}/tree-{vn}-{Sys.Date()}.svg') 
+			,  height = max( 14, floor( Ntip( tr2 ) / 10 ) )
+			, width = 16 
+			, limitsize = FALSE )
 		
 		# make mouseover info  
 		## standard meta data
@@ -277,7 +277,7 @@ treeview <- function( e0
 			 paste0(  'Statistics:\n',  ttdfs[i],   '\n\nGeography:\n', ttregtabs[i], '\n\nCo-circulating with:\n', ttcocirc[i], '\n\n', ttdefmuts[i],'\n', ttallmuts[i],'\n' , collapse = '\n')
 		})
 		gtr1.1$data$colour_var <-gtr1.1$data[[ vn ]]
-		gtr1.2 <- gheatmap( gtr1.1, genotype , width = .075 , offset=0.0005, colnames_angle=-90, colnames_position='top', colnames_offset_y=-6)
+		gtr1.2 <- gheatmap( gtr1.1, genotype , width = .075 , offset=0.0005, colnames_angle=-90, colnames_position='top', colnames_offset_y=-6, legend_title = 'Genotype')
 		gtr1.3 <- gtr1.2 +   
 		ggiraph::geom_point_interactive(aes(x = x, y = y
 			  , color = colour_var
@@ -285,17 +285,21 @@ treeview <- function( e0
 			  , data_id = node
 			  , size = cluster_size+1
 			  , shape = as.factor(internal)
-			  , alpha = .5
 			)
-		) + scale_shape_manual( values = shapes ) +  
-		scale_size(range = c(2, 16)) + scale_color_gradientn( colours  = cols, limits = colour_limits, oob = scales::squish ) 
+		) + scale_shape_manual( name = NULL, labels = NULL, values = shapes ) +  
+		scale_size(name = 'Cluster size', range = c(2, 16)) + 
+		scale_color_gradientn(  name = stringr::str_to_title( gsub(vn, patt = '_', rep = ' '))
+			, colours  = cols
+			, limits = colour_limits
+			, oob = scales::squish ) + 
+		theme( legend.position = 'top' )
 		
 		
 		#~ font-family: "Lucida Console", "Courier New", monospace;
 		tooltip_css <- "background-color:black;color:grey;padding:14px;border-radius:8px;font-family:\"Courier New\",monospace;"
 		pgtr1.3  <- girafe(
 		  ggobj = gtr1.3, width_svg = 15
-		  , height_svg = floor( Ntip( tr2 ) / 10 )
+		  , height_svg = max( 14,  floor( Ntip( tr2 ) / 10 ) )
 		  ,  options = list(
 						  opts_sizing(width = 0.8), 
 						  opts_tooltip(css = tooltip_css, use_fill=FALSE)

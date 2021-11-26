@@ -103,6 +103,7 @@ message(paste('Starting scan', Sys.time()) , '\n')
 	# prune tree
 	if ( !is.rooted( tre ) ){
 		if ( !( root_on_tip %in% amd$sequence_name)){
+			stopifnot( root_on_tip %in% tre$tip.label )
 			amd <- rbind( amd, data.frame( 
 				sequence_name = root_on_tip
 				, sample_time = root_on_tip_sample_time
@@ -288,6 +289,17 @@ message(paste('Starting scan', Sys.time()) , '\n')
 	{
 		if ( is.null(ta))
 			ta = .get_comparator_sample(u) 
+		if ( is.null( ta )){ #if still null, cant get good comparison 
+			return( 
+			list( lgr = NA, lgrp = .5, gam_r = NA
+			  , AIC = NA
+			  , AIC_gam = NA
+			  , growthrates = setNames( c(NA, NA), c('Logistic', 'GAM') )
+			  , relative_model_support = NA
+			  , plot = NULL 
+			  )
+			  )
+		}
 		if ( is.null( ta ))
 			return(0)
 		tu = descendantSids[[u]] 
@@ -356,6 +368,9 @@ message(paste('Starting scan', Sys.time()) , '\n')
 	 , form_index = 3 
 	) 
 	{
+		if ( is.null( ta )){
+			return( setNames( c(NA, 1), paste(sep = '_', var, c('logodds', 'p') ) ))
+		}
 		tu = descendantSids[[u]]
 		sta = sts[ta]
 		stu = sts[tu]
@@ -453,7 +468,6 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		# remove stops from allseg 
 		allsegregating <- allsegregating[ !grepl(allsegregating, patt = '[*]$') ]
 		allsegregating <- allsegregating[ !grepl(allsegregating, patt = ':[*]') ]
-		
 		annots <- rep('', Ntip(tr) + Nnode(tr ))
 		if ( length( allsegregating ) > 0  ){
 			allseg1 <- substr( regmatches( allsegregating, regexpr(allsegregating, patt=':[A-Z]' )), 2, 2)
@@ -464,21 +478,20 @@ message(paste('Starting scan', Sys.time()) , '\n')
 			sites <- paste0( sites_pre, sites_post )
 			
 			aas = c() 
-			for ( i in seq_along( allsegregating ))
-				aas <- cbind( aas
-					, do.call( rbind, lapply( mutlist, 
+			aaslist = lapply( seq_along( allsegregating ), function(i){
+				do.call( rbind, lapply( mutlist, 
 						function(x) ifelse(allsegregating[i] %in% x, allseg1[i], allseg2[i])  
 						)
-					) 
-				)
+					)
+			})
+			aas = do.call( cbind, aaslist )
 			colnames( aas ) <- allsegregating #sites
 			rownames( aas )<- tr$tip.label
-			
 			aas <- aas[ , order( sites ) ]
+			aas[ is.na( aas ) ] <- 'X' 
 			sites <- sort( sites )
 			aas1 = as.AAbin( aas )
 			aas2 <- as.phyDat( aas1 )
-			
 			ap = ancestral.pars( tr, aas2, return = 'phyDat' )
 			ap1<- as.character( ap )
 			for ( ie in postorder( tr )){
@@ -486,14 +499,14 @@ message(paste('Starting scan', Sys.time()) , '\n')
 				u <- tr$edge[ie, 2] 
 				j <- which( ap1[a, ] != ap1[u,] )
 				# keep only S and N annots
-				j <- j [ grepl(sites[j], patt = '^[SN]' )  ] 
+				j <- j [ grepl(sites[j], patt = '^[SN]:' )  ] 
 				annots[u] <- paste( paste0(sites[j],ap1[u,j]), collapse=',')
 				if ( nchar(annots[u] ) == 0 ) annots[u] <- NA 
 			}
 		}
 		nodedf = data.frame( node = 1:(Ntip(tr) + Nnode(tr)), annot = annots , stringsAsFactors = FALSE )
 		gtr1 = gtr %<+% nodedf 
-		gtr1 = gtr1 + geom_label( aes(x = branch, label = annot ))
+		gtr1 = gtr1 + geom_label( aes(x = branch, label = annot, size = 6 ))
 		
 		gtr1 <- gtr1 + geom_tiplab(align=TRUE)
 		gtr2 = gtr1 
@@ -502,7 +515,7 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		}
 		gtr2
 	}
-		
+	
 	
 	# all analyses for a particular node 
 	.process.node <- function(u)
@@ -512,7 +525,9 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		ulins <- amd$lineage[ match( tu, amd$sequence_name)]
 		alins <- amd$lineage[ match( ta, amd$sequence_name)]
 		lgs = .logistic_growth_stat ( u, ta )
-		best_gr = lgs$growthrates[ which.max(lgs$relative_model_support) ]
+		best_gr = NA 
+		if (!is.na( lgs$lgr ))
+			best_gr = lgs$growthrates[ which.max(lgs$relative_model_support) ]
 		
 		reg_summary = tryCatch( .region_summary( tu ), error = function(e) as.character(e))
 		cocirc_summary = tryCatch( .lineage_summary( ta ), error = function(e) as.character(e))
@@ -554,14 +569,15 @@ message(paste('Starting scan', Sys.time()) , '\n')
 			i <- which( nodes == u )
 			message(paste( 'Progress' , round(100*i / length( nodes )),  '%') ) 
 		}
-		
 		cldir = glue( '{output_dir}/{as.character(u)}'  ) 
 		dir.create( cldir  , showWarnings=FALSE)
 		# summary stat data 
 		write.csv( data.frame( statistic = t(X[1 , c('logistic_growth_rate', 'simple_logistic_growth_rate', 'logistic_growth_rate_p', 'gam_logistic_growth_rate', 'simple_logistic_model_support', 'clock_outlier') ] ) ) , file =  glue( '{cldir}/summary.csv' ) )
 		# freq plot 
-		suppressMessages( ggsave( lgs$plot, file =  glue( '{cldir}/frequency.pdf' )) )
-		suppressMessages( ggsave( lgs$plot, file =  glue( '{cldir}/frequency.png' ), bg = 'white') )
+		if ( !is.null( lgs$plot )){
+			suppressMessages( ggsave( lgs$plot, file =  glue( '{cldir}/frequency.pdf' )) )
+			suppressMessages( ggsave( lgs$plot, file =  glue( '{cldir}/frequency.png' ), bg = 'white') )
+		}
 		# tree plot 
 		if ( length(tu) < 1e3 ){
 			gtr = .cluster_tree( tu )
