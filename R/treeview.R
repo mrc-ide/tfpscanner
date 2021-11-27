@@ -24,7 +24,11 @@ treeview <- function( e0
 	library( ggplot2 )
 	library( ggiraph )
 	
+	# require logistic growth rate, prevent non-empty
+	branch_cols <- unique( c( 'logistic_growth_rate', branch_cols))
+	
 	dir.create( output_dir, showWarnings = FALSE )
+	
 	
 	# load env 
 	if ( is.character( e0 ) ){

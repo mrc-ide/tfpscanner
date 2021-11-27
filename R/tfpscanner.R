@@ -300,8 +300,6 @@ message(paste('Starting scan', Sys.time()) , '\n')
 			  )
 			  )
 		}
-		if ( is.null( ta ))
-			return(0)
 		tu = descendantSids[[u]] 
 		sta = sts[ ta ]
 		stu = sts[ tu ]
@@ -316,15 +314,21 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		} else{ 
 			p = s$coefficients[2, 4 ]
 		}
-		## time dep growth 
-		m1 = mgcv::gam( type=='clade' ~ s(time, bs = "bs", k = 4, m=1) , family = binomial(link='logit') , data = X)
+		## time dep growth ; needs a larger sample size 
 		X$estimated = predict( m )
-		
-		tout = seq( min(X$time) , max(X$time), length=5)
-		tout1 = tout[4] + diff(tout)[1]/2 
-		dlo = diff( predict( m1, newdata = data.frame( type=NA, time = c( tout1 , max(tout))) )  )
-		r = dlo*Tg / ((max(tout) - tout1))  
-		aic = c(AIC(m), AIC(m1))
+		if ( length( tu ) > 50 ){
+			m1 = mgcv::gam( type=='clade' ~ s(time, bs = "bs", k = 4, m=1) , family = binomial(link='logit') , data = X)
+			X$estimated = predict( m1 )
+			
+			tout = seq( min(X$time) , max(X$time), length=5)
+			tout1 = tout[4] + diff(tout)[1]/2 
+			dlo = diff( predict( m1, newdata = data.frame( type=NA, time = c( tout1 , max(tout))) )  )
+			r = dlo*Tg / ((max(tout) - tout1))  
+			aic = c(AIC(m), AIC(m1))
+		} else{
+			r = NA 
+			aic = c(AIC(m), Inf)
+		}
 		
 		list( lgr = rv, lgrp = p, gam_r =r 
 		  , AIC = aic[1]
@@ -511,7 +515,7 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		gtr1 <- gtr1 + geom_tiplab(align=TRUE)
 		gtr2 = gtr1 
 		if ( length( allsegregating ) < 100 ){
-			gtr2 <- gheatmap( gtr1, as.data.frame( aas ),  width = 1, offset=0.0005, colnames=FALSE, colnames_angle=-90, colnames_position='top', colnames_offset_y=-6 ) + theme(legend.position='none')
+			gtr2 <- gheatmap( gtr1, as.data.frame( aas ),  width = .66, offset=0.0005, colnames=FALSE, colnames_angle=-90, colnames_position='top', colnames_offset_y=-2 ) + theme(legend.position='none')
 		}
 		gtr2
 	}
@@ -528,6 +532,7 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		best_gr = NA 
 		if (!is.na( lgs$lgr ))
 			best_gr = lgs$growthrates[ which.max(lgs$relative_model_support) ]
+		
 		
 		reg_summary = tryCatch( .region_summary( tu ), error = function(e) as.character(e))
 		cocirc_summary = tryCatch( .lineage_summary( ta ), error = function(e) as.character(e))
@@ -583,8 +588,8 @@ message(paste('Starting scan', Sys.time()) , '\n')
 			gtr = .cluster_tree( tu )
 			suppressMessages( 
 				ggsave( gtr, file = glue( '{cldir}/clustertree.pdf' )
-					, height = floor( length(tu)  / 5 ) 
-					, width = max( 8 , sqrt(length(tu)) ) 
+					, height = max( 6, floor( length(tu)  / 5 )  )
+					, width = min(44, max( 24 , sqrt(length(tu)) )  )
 					, limitsize = FALSE  
 				)
 			)
