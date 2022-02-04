@@ -25,6 +25,7 @@
 #' @param test_cluster_odds_values Vector of same length as \code{test_cluster_odds}. This variable will be dichotomised by testing for equality of the variable with this value (e.g. vaccine_breakthrough == 'yes'). If NULL, the variable is assumed to be continuous (e.g. patient_age). 
 #' @param root_on_tip If input tree is not rooted, will root on this tip 
 #' @param root_on_tip_sample_time Numeric time that tip was sampled
+#' @param detailed_output If TRUE will provide detailed figures for each cluster 
 #' @return Invisibly returns a data frame with cluster statistics. 
 #' @export
 tfpscan <- function(tre
@@ -46,6 +47,7 @@ tfpscan <- function(tre
  , test_cluster_odds_value = c() 
  , root_on_tip = 'Wuhan/WH04/2020'
  , root_on_tip_sample_time = 2020 
+ , detailed_output = FALSE 
 )
 {
 message(paste('Starting scan', Sys.time()) , '\n')
@@ -574,36 +576,38 @@ message(paste('Starting scan', Sys.time()) , '\n')
 			i <- which( nodes == u )
 			message(paste( 'Progress' , round(100*i / length( nodes )),  '%') ) 
 		}
-		cldir = glue( '{output_dir}/{as.character(u)}'  ) 
-		dir.create( cldir  , showWarnings=FALSE)
-		# summary stat data 
-		write.csv( data.frame( statistic = t(X[1 , c('logistic_growth_rate', 'simple_logistic_growth_rate', 'logistic_growth_rate_p', 'gam_logistic_growth_rate', 'simple_logistic_model_support', 'clock_outlier') ] ) ) , file =  glue( '{cldir}/summary.csv' ) )
-		# freq plot 
-		if ( !is.null( lgs$plot )){
-			suppressMessages( ggsave( lgs$plot, file =  glue( '{cldir}/frequency.pdf' )) )
-			suppressMessages( ggsave( lgs$plot, file =  glue( '{cldir}/frequency.png' ), bg = 'white') )
-		}
-		# tree plot 
-		if ( length(tu) < 1e3 ){
-			gtr = .cluster_tree( tu )
-			suppressMessages( 
-				ggsave( gtr, file = glue( '{cldir}/clustertree.pdf' )
-					, height = max( 6, floor( length(tu)  / 5 )  )
-					, width = min(44, max( 24 , sqrt(length(tu)) )  )
-					, limitsize = FALSE  
+		if ( detailed_output )
+		{
+			cldir = glue( '{output_dir}/{as.character(u)}'  ) 
+			dir.create( cldir  , showWarnings=FALSE)
+			# summary stat data 
+			write.csv( data.frame( statistic = t(X[1 , c('logistic_growth_rate', 'simple_logistic_growth_rate', 'logistic_growth_rate_p', 'gam_logistic_growth_rate', 'simple_logistic_model_support', 'clock_outlier') ] ) ) , file =  glue( '{cldir}/summary.csv' ) )
+			# freq plot 
+			if ( !is.null( lgs$plot )){
+				suppressMessages( ggsave( lgs$plot, file =  glue( '{cldir}/frequency.pdf' )) )
+				suppressMessages( ggsave( lgs$plot, file =  glue( '{cldir}/frequency.png' ), bg = 'white') )
+			}
+			# tree plot 
+			if ( length(tu) < 1e3 ){
+				gtr = .cluster_tree( tu )
+				suppressMessages( 
+					ggsave( gtr, file = glue( '{cldir}/clustertree.pdf' )
+						, height = max( 6, floor( length(tu)  / 5 )  )
+						, width = min(44, max( 24 , sqrt(length(tu)) )  )
+						, limitsize = FALSE  
+					)
 				)
-			)
+			}
+			# clock figure TODO 
+			# tip table 
+			write.csv( amd[ amd$sequence_name %in% tu, ], file = glue( '{cldir}/sequences.csv' ))
+			# reg summary
+			write.csv( reg_summary, file = glue( '{cldir}/regional_composition.csv' ))
+			# lineage summary 
+			write.csv( lineage_summary, file = glue( '{cldir}/lineage_composition.csv' ))
+			# cocirc lineage summary 
+			write.csv( cocirc_summary, file = glue( '{cldir}/cocirculating_lineages.csv' ))
 		}
-		# clock figure TODO 
-		# tip table 
-		write.csv( amd[ amd$sequence_name %in% tu, ], file = glue( '{cldir}/sequences.csv' ))
-		# reg summary
-		write.csv( reg_summary, file = glue( '{cldir}/regional_composition.csv' ))
-		# lineage summary 
-		write.csv( lineage_summary, file = glue( '{cldir}/lineage_composition.csv' ))
-		# cocirc lineage summary 
-		write.csv( cocirc_summary, file = glue( '{cldir}/cocirculating_lineages.csv' ))
-		
 		X
 	}
 	
