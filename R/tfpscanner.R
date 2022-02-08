@@ -246,11 +246,11 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		w <- w/ (table(amd1$region)[names(w)])
 		w[ is.na(w) ] <- 0 
 		
-		na = min ( nrow( amd1 ) , nu * nX )
-		if ( na < nu ) 
-			return ( NULL )
 		amd1$w = w[ amd1$region ] 
 		amd1 <- amd1[ !is.na( amd1$w ) , ]
+                na = min ( nrow( amd1 ) , nu * nX )
+                if ( na < nu )
+                        return ( NULL )
 		ta = sample( amd1$sequence_name, replace=FALSE, size = na , prob = amd1$w ) 
 		ta
 	}
