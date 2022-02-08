@@ -49,6 +49,7 @@ tfpscan <- function(tre
  , root_on_tip_sample_time = 2020 
  , detailed_output = FALSE 
  , compute_gam = TRUE 
+ , compute_cluster_muts = FALSE
 )
 {
 message(paste('Starting scan', Sys.time()) , '\n')
@@ -127,7 +128,10 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		tre = tr2 
 	}
 	
-	sts <- setNames( amd$sample_time[ match( tr2$tip.label, amd$sequence_name ) ] , tr2$tip.label )
+	# var's for fast lookup time and region 
+	itr2 <-  match( tr2$tip.label, amd$sequence_name )
+	sts <- setNames( amd$sample_time[ itr2 ] , tr2$tip.label )
+	sequence_name2region <- setNames( amd$region [  itr2 ]  , tr2$tip.label )
 	
 	# root to tip 
 	ndel <- node.depth.edgelength( tre ) 
@@ -235,23 +239,23 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		minstu = min(na.omit(stu ))
 		maxstu = max(na.omit(stu) )
 		
-		# df for all tips outside of tu overlapping in time and region
-		amd1 = amd[ (amd$sample_time >= minstu) & (amd$sample_time <= maxstu),  ] #c('sequence_name', 'sample_date', 'region')
-		amd1 <- amd1[ !(amd1$sequence_name %in% tu) , ]
-		amd1 <- amd1[ amd1$region %in% unique(amd$region[ amd$sequence_name %in% tu]) , ]
-		
+		rtu <- sequence_name2region[tu] 
+		ta_r <- names( sequence_name2region[ sequence_name2region %in% unique(rtu) ] ) 
+		ta_t <- names( sta ) [ sta >= minstu & sta <= maxstu  ]
+		ta0 <- intersect( ta_r, ta_t )
+		ta0r <- sequence_name2region[ ta0 ] 
 		
 		# weight for region 
-		w = table ( amd$region[ match( descendantSids[[u]]  , amd$sequence_name ) ]  )  
-		w <- w/ (table(amd1$region)[names(w)])
+		w = table ( rtu  ) 
+		w <- w/ (table( ta0r )[names(w)])
 		w[ is.na(w) ] <- 0 
+		wa <- w[ ta0r ]
+		wa[ is.na( wa ) ] <- 0
 		
-		amd1$w = w[ amd1$region ] 
-		amd1 <- amd1[ !is.na( amd1$w ) , ]
-                na = min ( nrow( amd1 ) , nu * nX )
-                if ( na < nu )
-                        return ( NULL )
-		ta = sample( amd1$sequence_name, replace=FALSE, size = na , prob = amd1$w ) 
+		na = min (  length( ta0 ) , nu * nX )
+		if ( na < nu )
+				return ( NULL )
+		ta = sample( ta0, replace=FALSE, size = na , prob = wa ) 
 		ta
 	}
 	
@@ -542,7 +546,11 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		lineage_summary = tryCatch( .lineage_summary( tu ) , error = function(e) as.character(e) )
 		
 		a = .get_comparator_ancestor(u)
-		cmut = .cluster_muts( u, a )
+		if ( compute_cluster_muts ){
+			cmut = .cluster_muts( u, a )
+		} else{
+			cmut <- list( all = NA , defining = NA  )
+		}
 		
 		X = data.frame( cluster_id = as.character(u) 
 		 , node_number = u 
