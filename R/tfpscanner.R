@@ -241,8 +241,8 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		
 		rtu <- sequence_name2region[tu] 
 		ta_r <- names( sequence_name2region[ sequence_name2region %in% unique(rtu) ] ) 
-		ta_t <- names( sta ) [ sta >= minstu & sta <= maxstu  ]
-		ta0 <- intersect( ta_r, ta_t )
+		ta_t <- names( sts ) [ sts >= minstu & sts <= maxstu  ]
+		ta0 <- setdiff(  intersect( ta_r, ta_t ), tu )
 		ta0r <- sequence_name2region[ ta0 ] 
 		
 		# weight for region 
@@ -551,7 +551,6 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		} else{
 			cmut <- list( all = NA , defining = NA  )
 		}
-		
 		X = data.frame( cluster_id = as.character(u) 
 		 , node_number = u 
 		 , parent_number = ifelse( is.null(ancestors[[u]] ), NA, tail( ancestors[[u]], 1 ) ) 
