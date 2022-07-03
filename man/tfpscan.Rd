@@ -69,9 +69,9 @@ tfpscan(
 Invisibly returns a data frame with cluster statistics.
 }
 \description{
-Takes standard inputs in the form of a rooted phylogeny and data frame with required metadata (see below). 
+Takes standard inputs in the form of a rooted phylogeny and data frame with required metadata (see below).
 Computes a logistic growth rate and a statistic for outlying values in a molecular clock (root to tip regression).
 Comparison sample is matched by time and region.
-If using parallel computation (ncpu>1), the code should be called via mpirun, e.g. 
+If using parallel computation (ncpu>1), the code should be called via mpirun, e.g.
 mpirun -n <ncpu+1> R --slave -f <script>
 }
