@@ -9,6 +9,11 @@ get_clusternode_mlesky(
   scanner_env = readRDS("scanner-env-2021-03-03.rds")
 )
 }
+\arguments{
+\item{u}{integer}
+
+\item{scanner_env}{RDS file with scanner environment}
+}
 \description{
 Run a fast treedater/mlesky analysis for a given node in the scanner output
 }

@@ -27,43 +27,55 @@ tfpscan(
 )
 }
 \arguments{
-\item{tre}{A phylogeny in ape::phylo or treeio::treedata form. If not rooted, must provide an outgroup (see below)}
+\item{tre}{A phylogeny in ape::phylo or treeio::treedata form. If not rooted, must provide
+an outgroup (see below)}
 
-\item{amd}{A data frame containing required metadata for each tip in tree: sequence_name, sample_date, region. Optional metadata includes: sample_time(numeric), lineage, mutations.}
+\item{amd}{A data frame containing required metadata for each tip in tree: sequence_name,
+sample_date, region. Optional metadata includes: sample_time(numeric), lineage, mutations.}
 
 \item{min_descendants}{Clade must have at least this many tips}
 
 \item{max_descendants}{Clade can have at most this many tips}
 
-\item{min_cluster_age_yrs}{Only include clades that have sample tips that span at least this value}
+\item{min_cluster_age_yrs}{Only include clades that have sample tips that span at least
+this value}
 
 \item{min_date}{Only include samples after this data}
 
 \item{max_date}{Only include samples before and including this date}
 
-\item{min_blen}{Only compute statistics for nodes descended from branches of at least this length}
+\item{min_blen}{Only compute statistics for nodes descended from branches of at least
+this length}
 
 \item{ncpu}{number cpu for multicore ops}
 
 \item{output_dir}{Path to directory where results will be saved}
 
-\item{num_ancestor_comparison}{When finding comparison sample for molecular clock stat, make sure sister clade has at least this many tips}
+\item{num_ancestor_comparison}{When finding comparison sample for molecular clock stat,
+make sure sister clade has at least this many tips}
 
-\item{factor_geo_comparison}{When finding comparison sample based on geography, make sure sample has this factor times the number within clade of interest}
+\item{factor_geo_comparison}{When finding comparison sample based on geography, make
+sure sample has this factor times the number within clade of interest}
 
 \item{Tg}{Approximate generation time in years. Growth rate is reported in these units.}
 
 \item{report_freq}{Print progress for every n'th node}
 
-\item{mutation_cluster_frequency_threshold}{If mutation is detected with more than this frequency within a cluster it may be called as a defining mutation}
+\item{mutation_cluster_frequency_threshold}{If mutation is detected with more than this
+frequency within a cluster it may be called as a defining mutation}
 
-\item{test_cluster_odds}{A character vector of variable names in \code{amd}. The odds of a sample belonging to each cluster given tis variable will be estimated using conditional logistic regression and adjusting for time.}
+\item{test_cluster_odds}{A character vector of variable names in \code{amd}. The odds of
+a sample belonging to each cluster given tis variable will be estimated using conditional
+logistic regression and adjusting for time.}
+
+\item{test_cluster_odds_value}{Vector of same length as \code{test_cluster_odds}. This
+variable will be dichotomised by testing for equality of the variable with this value
+(e.g. vaccine_breakthrough == 'yes'). If NULL, the variable is assumed to be continuous
+(e.g. patient_age).}
 
 \item{root_on_tip}{If input tree is not rooted, will root on this tip}
 
 \item{root_on_tip_sample_time}{Numeric time that tip was sampled}
-
-\item{test_cluster_odds_values}{Vector of same length as \code{test_cluster_odds}. This variable will be dichotomised by testing for equality of the variable with this value (e.g. vaccine_breakthrough == 'yes'). If NULL, the variable is assumed to be continuous (e.g. patient_age).}
 }
 \value{
 Invisibly returns a data frame with cluster statistics.
