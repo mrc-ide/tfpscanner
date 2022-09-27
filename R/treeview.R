@@ -15,6 +15,8 @@ treeview <- function( e0
 , mutations = c( 'S:A222V', 'S:Y145H', 'N:Q9L', 'S:E484K')
 , lineages = c( 'AY\\.9' , 'AY\\.43', 'AY\\.4\\.2')
 , output_dir = 'treeview' 
+, heatmap_width = .075 
+, heatmap_lab_offset = -6
 )
 {
 	library( ggtree ) 
@@ -37,8 +39,8 @@ treeview <- function( e0
 	sc0 <- e0$Y 
 	cmuts = lapply( 1:nrow(sc0), function(i){
 		list( 
-		defining = strsplit( sc0$all_mutations[i], split = '\\|' )[[1]]
-		, all = strsplit( sc0$defining_mutations[i], split = '\\|' )[[1]] 
+		defining = strsplit( sc0$defining_mutations[i], split = '\\|' )[[1]]
+		, all = strsplit( sc0$all_mutations[i], split = '\\|' )[[1]] 
 		)
 	})
 	names( cmuts )<- sc0$cluster_id
@@ -137,16 +139,30 @@ treeview <- function( e0
 	tablin <- table(  td$lineages1[ !(sc0$lineage1 %in% c('None', 'B.1')) ]  )
 	tablin <- tablin [order( tablin ) ]
 	lins <- names( tablin )
-	
 	# find a good internal node to represent the mrca of each lineage 
 	lin_nodes = c() 
 	lin_node_names <- c() 
 	for (lin in lins){
 		whichrep = na.omit( sc0$representative[ sc0$lineage1==lin ]  ) 
+		res <- NULL
 		if ( length( whichrep) == 1){
 			res = which( tr2$tip.label == whichrep )
 		}else{
 			res = getMRCA( tr2, whichrep )
+			#~ 			get desc tips 
+			itr2 = which( sc0$tr2mrca== res )
+			if ( length( itr2 ) == 1 ){
+				tips = strsplit( sc0[itr2, 'tips'], split='\\|')[[1]]
+				#~ 			check lineage
+				tipslins <- e0$amd$lineage[ match( tips, e0$amd$sequence_name ) ]
+				#~ 			check major lineage is lin
+				txtl <- table( tipslins )
+				if ( names(txtl[which.max(txtl)]) != lin ) 
+					res = NULL 
+			} else{
+				res <- NULL 
+			}
+		
 		}
 		if ( !is.null(res)){
 			lin_nodes <- c( lin_nodes, res )
@@ -281,7 +297,7 @@ treeview <- function( e0
 			 paste0(  'Statistics:\n',  ttdfs[i],   '\n\nGeography:\n', ttregtabs[i], '\n\nCo-circulating with:\n', ttcocirc[i], '\n\n', ttdefmuts[i],'\n', ttallmuts[i],'\n' , collapse = '\n')
 		})
 		gtr1.1$data$colour_var <-gtr1.1$data[[ vn ]]
-		gtr1.2 <- gheatmap( gtr1.1, genotype , width = .075 , offset=0.0005, colnames_angle=-90, colnames_position='top', colnames_offset_y=-6, legend_title = 'Genotype')
+		gtr1.2 <- gheatmap( gtr1.1, genotype , width = heatmap_width, offset=0.0005, colnames_angle=-90, colnames_position='top', colnames_offset_y=heatmap_lab_offset, legend_title = 'Genotype')
 		gtr1.3 <- gtr1.2 +   
 		ggiraph::geom_point_interactive(aes(x = x, y = y
 			  , color = colour_var

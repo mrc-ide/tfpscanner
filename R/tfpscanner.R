@@ -49,7 +49,7 @@ tfpscan <- function(tre
  , root_on_tip_sample_time = 2020 
  , detailed_output = FALSE 
  , compute_gam = TRUE 
- , compute_cluster_muts = FALSE
+ , compute_cluster_muts = TRUE
 )
 {
 message(paste('Starting scan', Sys.time()) , '\n')
@@ -99,6 +99,11 @@ message(paste('Starting scan', Sys.time()) , '\n')
 	# filter by sample time 
 	amd <- amd [ (amd$sample_time >= min_time) & (amd$sts <= max_time) , ] 
 	sts <- setNames( amd$sample_time , amd$sequence_name )
+	
+	# mutations var 
+	if (!('mutations' %in% colnames( amd ))){
+		amd$mutations <- '-'
+	}
 	
 	# retain only required variables 
 	#amd <- amd[ , unique( c('sequence_name', 'sample_time', 'sample_date', 'region', 'lineage', 'mutations', test_cluster_odds) ) ] 
@@ -501,8 +506,8 @@ message(paste('Starting scan', Sys.time()) , '\n')
 			aas <- aas[ , order( sites ) ]
 			aas[ is.na( aas ) ] <- 'X' 
 			sites <- sort( sites )
-			aas1 = as.AAbin( aas )
-			aas2 <- as.phyDat( aas1 )
+			#aas1 = as.AAbin( aas )
+			aas2 <- as.phyDat( aas, type = 'AA' )
 			ap = ancestral.pars( tr, aas2, return = 'phyDat' )
 			ap1<- as.character( ap )
 			for ( ie in postorder( tr )){
@@ -519,7 +524,7 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		gtr1 = gtr %<+% nodedf 
 		gtr1 = gtr1 + geom_label( aes(x = branch, label = annot, size = 6 ))
 		
-		gtr1 <- gtr1 + geom_tiplab(align=TRUE)
+		gtr1 <- gtr1 + geom_tiplab(align=FALSE)
 		gtr2 = gtr1 
 		if ( length( allsegregating ) < 100 ){
 			gtr2 <- gheatmap( gtr1, as.data.frame( aas ),  width = .66, offset=0.0005, colnames=FALSE, colnames_angle=-90, colnames_position='top', colnames_offset_y=-2 ) + theme(legend.position='none')
@@ -549,7 +554,7 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		if ( compute_cluster_muts ){
 			cmut = .cluster_muts( u, a )
 		} else{
-			cmut <- list( all = NA , defining = NA  )
+			cmut <- list( defining = NA, all = NA   )
 		}
 		X = data.frame( cluster_id = as.character(u) 
 		 , node_number = u 
@@ -601,7 +606,7 @@ message(paste('Starting scan', Sys.time()) , '\n')
 				suppressMessages( 
 					ggsave( gtr, file = glue( '{cldir}/clustertree.pdf' )
 						, height = max( 6, floor( length(tu)  / 5 )  )
-						, width = min(44, max( 24 , sqrt(length(tu)) )  )
+						, width = min(64, max( 36 , sqrt(length(tu)) )  )
 						, limitsize = FALSE  
 					)
 				)
@@ -643,7 +648,7 @@ message(paste('Starting scan', Sys.time()) , '\n')
 	} else{
 		Y <- c()
 		for ( u in nodes ){
-			X = .process.node(u) 
+			X = tryCatch( .process.node(u) , error = function(e){  saveRDS(e, file=glue('{u}-err.rds')); return(e)  })
 			Y <- rbind( Y, X )
 		}
 	}

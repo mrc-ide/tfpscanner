@@ -9,7 +9,9 @@ treeview(
   branch_cols = c("logistic_growth_rate", "clock_outlier"),
   mutations = c("S:A222V", "S:Y145H", "N:Q9L", "S:E484K"),
   lineages = c("AY\\\\.9", "AY\\\\.43", "AY\\\\.4\\\\.2"),
-  output_dir = "treeview"
+  output_dir = "treeview",
+  heatmap_width = 0.075,
+  heatmap_lab_offset = -6
 )
 }
 \arguments{
