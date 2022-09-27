@@ -23,7 +23,10 @@ tfpscan(
   test_cluster_odds = c(),
   test_cluster_odds_value = c(),
   root_on_tip = "Wuhan/WH04/2020",
-  root_on_tip_sample_time = 2020
+  root_on_tip_sample_time = 2020,
+  detailed_output = FALSE,
+  compute_gam = TRUE,
+  compute_cluster_muts = TRUE
 )
 }
 \arguments{
@@ -62,6 +65,8 @@ tfpscan(
 \item{root_on_tip}{If input tree is not rooted, will root on this tip}
 
 \item{root_on_tip_sample_time}{Numeric time that tip was sampled}
+
+\item{detailed_output}{If TRUE will provide detailed figures for each cluster}
 
 \item{test_cluster_odds_values}{Vector of same length as \code{test_cluster_odds}. This variable will be dichotomised by testing for equality of the variable with this value (e.g. vaccine_breakthrough == 'yes'). If NULL, the variable is assumed to be continuous (e.g. patient_age).}
 }

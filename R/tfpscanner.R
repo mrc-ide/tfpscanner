@@ -25,6 +25,7 @@
 #' @param test_cluster_odds_values Vector of same length as \code{test_cluster_odds}. This variable will be dichotomised by testing for equality of the variable with this value (e.g. vaccine_breakthrough == 'yes'). If NULL, the variable is assumed to be continuous (e.g. patient_age).
 #' @param root_on_tip If input tree is not rooted, will root on this tip
 #' @param root_on_tip_sample_time Numeric time that tip was sampled
+#' @param detailed_output If TRUE will provide detailed figures for each cluster 
 #' @import ape lubridate glue mgcv
 #' @import ggplot2 ggtree phangorn
 #' @import foreach doMPI
@@ -50,7 +51,10 @@ tfpscan <- function(tre
  , test_cluster_odds = c()
  , test_cluster_odds_value = c()
  , root_on_tip = 'Wuhan/WH04/2020'
- , root_on_tip_sample_time = 2020
+ , root_on_tip_sample_time = 2020 
+ , detailed_output = FALSE 
+ , compute_gam = TRUE 
+ , compute_cluster_muts = TRUE
 )
 {
 message(paste('Starting scan', Sys.time()) , '\n')
@@ -87,11 +91,16 @@ message(paste('Starting scan', Sys.time()) , '\n')
 	# filter by sample time
 	amd <- amd [ (amd$sample_time >= min_time) & (amd$sts <= max_time) , ]
 	sts <- setNames( amd$sample_time , amd$sequence_name )
-
-	# retain only required variables
-	#amd <- amd[ , unique( c('sequence_name', 'sample_time', 'sample_date', 'region', 'lineage', 'mutations', test_cluster_odds) ) ]
-	amd <- amd [ amd$sequence_name %in% tre$tip.label ,  ]
-
+	
+  # mutations var 
+	if (!('mutations' %in% colnames( amd ))){
+		amd$mutations <- '-'
+	}
+	
+	# retain only required variables 
+	#amd <- amd[ , unique( c('sequence_name', 'sample_time', 'sample_date', 'region', 'lineage', 'mutations', test_cluster_odds) ) ] 
+	amd <- amd [ amd$sequence_name %in% tre$tip.label ,  ] 
+	
 	# prune tree
 	if ( !is.rooted( tre ) ){
 		if ( !( root_on_tip %in% amd$sequence_name)){
@@ -115,12 +124,15 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		tr2 = root( tre, outgroup= root_on_tip, resolve.root = TRUE )
 		tre = tr2
 	}
-
-	sts <- setNames( amd$sample_time[ match( tr2$tip.label, amd$sequence_name ) ] , tr2$tip.label )
-
-	# root to tip
-	ndel <- node.depth.edgelength( tre )
-
+  
+	# var's for fast lookup time and region 
+	itr2 <-  match( tr2$tip.label, amd$sequence_name )
+	sts <- setNames( amd$sample_time[ itr2 ] , tr2$tip.label )
+	sequence_name2region <- setNames( amd$region [  itr2 ]  , tr2$tip.label )
+	
+	# root to tip 
+	ndel <- node.depth.edgelength( tre ) 
+	
 	message(paste('Loaded tree & filtered by inclusion criteria', Sys.time()) )
 
 	# data structures to quickly look up tree data
@@ -223,24 +235,25 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		#~ 		 stu = descsts [[ u ]]
 		minstu = min(na.omit(stu ))
 		maxstu = max(na.omit(stu) )
-
-		# df for all tips outside of tu overlapping in time and region
-		amd1 = amd[ (amd$sample_time >= minstu) & (amd$sample_time <= maxstu),  ] #c('sequence_name', 'sample_date', 'region')
-		amd1 <- amd1[ !(amd1$sequence_name %in% tu) , ]
-		amd1 <- amd1[ amd1$region %in% unique(amd$region[ amd$sequence_name %in% tu]) , ]
-
-
-		# weight for region
-		w = table ( amd$region[ match( descendantSids[[u]]  , amd$sequence_name ) ]  )
-		w <- w/ (table(amd1$region)[names(w)])
-		w[ is.na(w) ] <- 0
-
-		na = min ( nrow( amd1 ) , nu * nX )
+    
+		rtu <- sequence_name2region[tu] 
+		ta_r <- names( sequence_name2region[ sequence_name2region %in% unique(rtu) ] ) 
+		ta_t <- names( sts ) [ sts >= minstu & sts <= maxstu  ]
+		ta0 <- setdiff(  intersect( ta_r, ta_t ), tu )
+		ta0r <- sequence_name2region[ ta0 ] 
+		
+		# weight for region 
+		w = table ( rtu  ) 
+		w <- w/ (table( ta0r )[names(w)])
+		w[ is.na(w) ] <- 0 
+		wa <- w[ ta0r ]
+		wa[ is.na( wa ) ] <- 0
+		
+		na = min (  length( ta0 ) , nu * nX )
 		if ( na < nu )
-			return ( NULL )
-		amd1$w = w[ amd1$region ]
-		amd1 <- amd1[ !is.na( amd1$w ) , ]
-		ta = sample( amd1$sequence_name, replace=FALSE, size = na , prob = amd1$w )
+				return ( NULL )
+		ta = sample( ta0, replace=FALSE, size = na , prob = wa ) 
+    
 		ta
 	}
 
@@ -308,7 +321,7 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		}
 		## time dep growth ; needs a larger sample size
 		X$estimated = predict( m )
-		if ( length( tu ) > 50 ){
+		if ( compute_gam & (length( tu ) > 50) ){
 			m1 = mgcv::gam( type=='clade' ~ s(time, bs = "bs", k = 4, m=1) , family = binomial(link='logit') , data = X)
 			X$estimated = predict( m1 )
 
@@ -484,8 +497,8 @@ message(paste('Starting scan', Sys.time()) , '\n')
 			aas <- aas[ , order( sites ) ]
 			aas[ is.na( aas ) ] <- 'X'
 			sites <- sort( sites )
-			aas1 = as.AAbin( aas )
-			aas2 <- as.phyDat( aas1 )
+			#aas1 = as.AAbin( aas )
+			aas2 <- as.phyDat( aas, type = 'AA' )
 			ap = ancestral.pars( tr, aas2, return = 'phyDat' )
 			ap1<- as.character( ap )
 			for ( ie in postorder( tr )){
@@ -501,9 +514,10 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		nodedf = data.frame( node = 1:(Ntip(tr) + Nnode(tr)), annot = annots , stringsAsFactors = FALSE )
 		gtr1 = gtr %<+% nodedf
 		gtr1 = gtr1 + geom_label( aes(x = branch, label = annot, size = 6 ))
-
-		gtr1 <- gtr1 + geom_tiplab(align=TRUE)
-		gtr2 = gtr1
+    
+		gtr1 <- gtr1 + geom_tiplab(align=FALSE)
+		gtr2 = gtr1 
+    
 		if ( length( allsegregating ) < 100 ){
 			gtr2 <- gheatmap( gtr1, as.data.frame( aas ),  width = .66, offset=0.0005, colnames=FALSE, colnames_angle=-90, colnames_position='top', colnames_offset_y=-2 ) + theme(legend.position='none')
 		}
@@ -529,11 +543,14 @@ message(paste('Starting scan', Sys.time()) , '\n')
 		lineage_summary = tryCatch( .lineage_summary( tu ) , error = function(e) as.character(e) )
 
 		a = .get_comparator_ancestor(u)
-		cmut = .cluster_muts( u, a )
-
-		X = data.frame( cluster_id = as.character(u)
-		 , node_number = u
-		 , parent_number = ifelse( is.null(ancestors[[u]] ), NA, tail( ancestors[[u]], 1 ) )
+		if ( compute_cluster_muts ){
+			cmut = .cluster_muts( u, a )
+		} else{
+			cmut <- list( defining = NA, all = NA   )
+		}
+		X = data.frame( cluster_id = as.character(u) 
+		 , node_number = u 
+		 , parent_number = ifelse( is.null(ancestors[[u]] ), NA, tail( ancestors[[u]], 1 ) ) 
 		 , most_recent_tip = as.Date( date_decimal( max( na.omit(sts[ tu ])  ) ) )
 		 , least_recent_tip = as.Date( date_decimal( min( na.omit( sts[ tu ])  ) ) )
 		 , cluster_size = length( tu )
@@ -564,36 +581,38 @@ message(paste('Starting scan', Sys.time()) , '\n')
 			i <- which( nodes == u )
 			message(paste( 'Progress' , round(100*i / length( nodes )),  '%') )
 		}
-		cldir = glue( '{output_dir}/{as.character(u)}'  )
-		dir.create( cldir  , showWarnings=FALSE)
-		# summary stat data
-		write.csv( data.frame( statistic = t(X[1 , c('logistic_growth_rate', 'simple_logistic_growth_rate', 'logistic_growth_rate_p', 'gam_logistic_growth_rate', 'simple_logistic_model_support', 'clock_outlier') ] ) ) , file =  glue( '{cldir}/summary.csv' ) )
-		# freq plot
-		if ( !is.null( lgs$plot )){
-			suppressMessages( ggsave( lgs$plot, file =  glue( '{cldir}/frequency.pdf' )) )
-			suppressMessages( ggsave( lgs$plot, file =  glue( '{cldir}/frequency.png' ), bg = 'white') )
-		}
-		# tree plot
-		if ( length(tu) < 1e3 ){
-			gtr = .cluster_tree( tu )
-			suppressMessages(
-				ggsave( gtr, file = glue( '{cldir}/clustertree.pdf' )
-					, height = max( 6, floor( length(tu)  / 5 )  )
-					, width = min(44, max( 24 , sqrt(length(tu)) )  )
-					, limitsize = FALSE
+		if ( detailed_output )
+		{
+			cldir = glue( '{output_dir}/{as.character(u)}'  ) 
+			dir.create( cldir  , showWarnings=FALSE)
+			# summary stat data 
+			write.csv( data.frame( statistic = t(X[1 , c('logistic_growth_rate', 'simple_logistic_growth_rate', 'logistic_growth_rate_p', 'gam_logistic_growth_rate', 'simple_logistic_model_support', 'clock_outlier') ] ) ) , file =  glue( '{cldir}/summary.csv' ) )
+			# freq plot 
+			if ( !is.null( lgs$plot )){
+				suppressMessages( ggsave( lgs$plot, file =  glue( '{cldir}/frequency.pdf' )) )
+				suppressMessages( ggsave( lgs$plot, file =  glue( '{cldir}/frequency.png' ), bg = 'white') )
+			}
+			# tree plot 
+			if ( length(tu) < 1e3 ){
+				gtr = .cluster_tree( tu )
+				suppressMessages( 
+					ggsave( gtr, file = glue( '{cldir}/clustertree.pdf' )
+						, height = max( 6, floor( length(tu)  / 5 )  )
+						, width = min(64, max( 36 , sqrt(length(tu)) )  )
+						, limitsize = FALSE  
+					)
 				)
-			)
+			}
+			# clock figure TODO 
+			# tip table 
+			write.csv( amd[ amd$sequence_name %in% tu, ], file = glue( '{cldir}/sequences.csv' ))
+			# reg summary
+			write.csv( reg_summary, file = glue( '{cldir}/regional_composition.csv' ))
+			# lineage summary 
+			write.csv( lineage_summary, file = glue( '{cldir}/lineage_composition.csv' ))
+			# cocirc lineage summary 
+			write.csv( cocirc_summary, file = glue( '{cldir}/cocirculating_lineages.csv' ))
 		}
-		# clock figure TODO
-		# tip table
-		write.csv( amd[ amd$sequence_name %in% tu, ], file = glue( '{cldir}/sequences.csv' ))
-		# reg summary
-		write.csv( reg_summary, file = glue( '{cldir}/regional_composition.csv' ))
-		# lineage summary
-		write.csv( lineage_summary, file = glue( '{cldir}/lineage_composition.csv' ))
-		# cocirc lineage summary
-		write.csv( cocirc_summary, file = glue( '{cldir}/cocirculating_lineages.csv' ))
-
 		X
 	}
 
@@ -621,7 +640,7 @@ message(paste('Starting scan', Sys.time()) , '\n')
 	} else{
 		Y <- c()
 		for ( u in nodes ){
-			X = .process.node(u)
+			X = tryCatch( .process.node(u) , error = function(e){  saveRDS(e, file=glue('{u}-err.rds')); return(e)  })
 			Y <- rbind( Y, X )
 		}
 	}
