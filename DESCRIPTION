@@ -1,7 +1,7 @@
 Package: tfpscanner
 Type: Package
 Title: Transmission fitness polymorphism scanner 
-Version: 0.1.1
+Version: 0.1.2
 Date: 2022-09-26
 Author: Erik Volz, Olivia Boyd
 Maintainer: Erik Volz <e.volz@imperial.ac.uk>
@@ -11,7 +11,6 @@ Depends:
   R (>= 4.1.0)
 Imports: 
   ape,
-  doMPI,
   dplyr,
   foreach,
   ggiraph,
@@ -26,6 +25,8 @@ Imports:
   scales,
   stringr, 
   treedater
+Suggests: 
+  doMPI
 Remotes: 
   emvolz-phylodynamics/mlesky
 Encoding: UTF-8

@@ -366,14 +366,16 @@ treeview <- function( e0
 		fx = as.factor( sc1$mutation_lineage )
 		sc1$x <- as.numeric( fx )
 		sc1$x <- rnorm( nrow( sc1 ) , sc1$x, .15 )
-		sc1$y = sc1$logistic_growth_rate
+		sc1$y = sc1[[varx]]
 
 		p1 <- ggplot( sc1 ) + ggiraph::geom_point_interactive(aes( x = x, y = y, colour = mutation_lineage, size = cluster_size+1)
 		  , tooltip = sc1$mouseover
 		  , data_id = sc1$node
 		  , alpha = .5
 		  , data = sc1
-		) + xlab( 'Lineage and/or mutation' ) + ylab( 'Logistic growth rate' ) + geom_hline( aes( yintercept = 0 ) )
+		) + xlab( 'Lineage and/or mutation' ) + ylab( varx ) + geom_hline( aes( yintercept = 0 ) ) + 
+			theme( axis.text.x =  element_blank()
+			 , axis.ticks.x = element_blank()  )
 
 		tooltip_css <- "background-color:black;color:grey;padding:14px;border-radius:8px;font-family:\"Courier New\",monospace;"
 		g1 = girafe(
@@ -396,13 +398,22 @@ treeview <- function( e0
 	for ( vn in setdiff(  branch_cols, c('logistic_growth_rate') ) ){
 		suppressWarnings( .plot_tree( vn , mut_regex = mutations )  )
 	}
-
+	
 	suppressWarnings(
 		.pl_cluster_sina(pldf
 		, mut_regexp  = mutations
 		, lineage_regexp = lineages
 		)
 	)
-
+	for ( vn in setdiff(  branch_cols, c('logistic_growth_rate') ) ){
+		suppressWarnings(
+			.pl_cluster_sina(pldf
+			, varx = vn 
+			, mut_regexp  = mutations
+			, lineage_regexp = lineages
+			)
+		)
+	}
+	
 	invisible( pl )
 }
