@@ -20,10 +20,6 @@ jobs:
         with:
           use-public-rspm: true
 
-      - name: "[Stage] Dependencies"
-        run: |
-            sudo apt install libopenmpi-dev
-
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::lintr, local::.

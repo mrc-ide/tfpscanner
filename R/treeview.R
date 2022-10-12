@@ -243,8 +243,8 @@ treeview <- function(e0,
 			)
 			y <- t(y)
 			colnames(y) <- ""
-			tryCatch(paste(knitr::kable(y, "simple"), collapse = "\n")
-				, error = function(e) paste(knitr::kable(y, "markdown"), collapse = "\n"))
+			tryCatch(paste(knitr::kable(y, "simple"), collapse = "\n"),
+			         error = function(e) paste(knitr::kable(y, "markdown"), collapse = "\n"))
 		})
 
 
@@ -316,7 +316,7 @@ treeview <- function(e0,
 		genotype <- genotype[, -1, drop = FALSE]
 
 		# make html widget
-		gtr1.1$data$mouseover <- sapply(seq_len(length(ttdfs)), function(i) {
+		gtr1.1$data$mouseover <- sapply(seq_along(ttdfs), function(i) {
 			 paste0("Statistics:\n", ttdfs[i],
 			        "\n\nGeography:\n", ttregtabs[i],
 			        "\n\nCo-circulating with:\n", ttcocirc[i],

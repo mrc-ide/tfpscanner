@@ -483,7 +483,7 @@ message(paste("Starting scan", Sys.time()), "\n")
 		} else {
 			y <- data.frame(Lineage = lins[1], Frequency = 1)
 		}
-		y <- y [seq_len(min(nrow(y)), maxrows), ]
+		y <- y [seq_len(min(nrow(y), maxrows)), ]
 		y$Frequency <- paste0(round(y$Frequency * 100), "%")
 		paste(knitr::kable(y, "simple"), collapse = "\n") # convert to string
 	}
@@ -500,7 +500,7 @@ message(paste("Starting scan", Sys.time()), "\n")
 		} else {
 			y <- data.frame(Region = regs[1], Frequency = 1)
 		}
-		y <- y [seq_len(min(nrow(y)), maxrows), ]
+		y <- y [seq_len(min(nrow(y), maxrows)), ]
 		y$Frequency <- paste0(round(y$Frequency * 100), "%")
 		paste(knitr::kable(y, "simple"), collapse = "\n") # convert to string
 	}
