@@ -2,7 +2,8 @@
 % Please edit documentation in R/treeview.R
 \name{treeview}
 \alias{treeview}
-\title{Generate interactive tree visualisations and scatter plots for illustrating scannint statistics.}
+\title{Generate interactive tree visualisations and scatter plots for illustrating
+scannint statistics.}
 \usage{
 treeview(
   e0,
@@ -13,21 +14,25 @@ treeview(
 )
 }
 \arguments{
-\item{e0}{Path to the scanner environment produced by \code{tfpscan}. Alternatively can pass the environment directly.}
+\item{e0}{Path to the scanner environment produced by \code{tfpscan}. Alternatively
+can pass the environment directly.}
 
-\item{branch_cols}{A character vector of statistics for which outputs should be produced. The logistic growth rate plot will always be produced.}
+\item{branch_cols}{A character vector of statistics for which outputs should be
+produced. The logistic growth rate plot will always be produced.}
 
-\item{mutations}{A character vector of mutations which will be illustrated in a heatmap}
+\item{mutations}{A character vector of mutations which will be illustrated in a
+heatmap}
 
-\item{lineages}{A set of lineage names which will be used to subdivide outputs in scatter plots.}
+\item{lineages}{A set of lineage names which will be used to subdivide outputs in
+scatter plots.}
 
-\item{output_dir}{Outputs will be saved in this directory. Will create the directory if it does not exist.}
-
-\item{pldf}{the data element of a tree plot}
+\item{output_dir}{Outputs will be saved in this directory. Will create the directory
+if it does not exist.}
 }
 \value{
 A ggtree plot
 }
 \description{
-This will produce a set of html widgets which will highlight by colour and tooltips statistics such as growth rate and molecular clock outliers.
+This will produce a set of html widgets which will highlight by colour and
+tooltips statistics such as growth rate and molecular clock outliers.
 }
