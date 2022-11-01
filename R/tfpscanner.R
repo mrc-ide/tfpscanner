@@ -32,13 +32,17 @@
 #' @param test_cluster_odds A character vector of variable names in \code{amd}. The odds of a sample
 #'   belonging to each cluster given tis variable will be estimated using conditional logistic
 #'   regression and adjusting for time.
-#' @param test_cluster_odds_values Vector of same length as \code{test_cluster_odds}. This variable
+#' @param test_cluster_odds_value Vector of same length as \code{test_cluster_odds}. This variable
 #'   will be dichotomised by testing for equality of the variable with this value (e.g.
 #'   vaccine_breakthrough == 'yes'). If NULL, the variable is assumed to be continuous (e.g.
 #'   patient_age).
 #' @param root_on_tip If input tree is not rooted, will root on this tip
 #' @param root_on_tip_sample_time Numeric time that tip was sampled
 #' @param detailed_output If TRUE will provide detailed figures for each cluster
+#' @param compute_gam Boolean. Should growth rates be summarised using a generalised additive model
+#'   (in addition to the logistic model)?
+#' @param compute_cluster_muts Boolean. Should clusters of mutations (defining mutations etc) be
+#'   identified?
 #'
 #' @importFrom foreach %dopar%
 #' @importFrom ggtree %<+%
@@ -822,7 +826,7 @@ tfpscan <- function(tre,
     Y <- c()
     for (u in nodes) {
       X <- tryCatch(.process.node(u), error = function(e) {
-        saveRDS(e, file = glue("{u}-err.rds"))
+        saveRDS(e, file = glue::glue("{u}-err.rds"))
         return(e)
       })
       Y <- rbind(Y, X)

@@ -11,6 +11,8 @@
 #' @param lineages A set of lineage names which will be used to subdivide outputs in scatter plots.
 #' @param output_dir Outputs will be saved in this directory. Will create the directory if it does
 #'   not exist.
+#' @param heatmap_width,heatmap_lab_offset Width and label-offset parameters for the constructed
+#'   heatmap.
 #'
 #' @importFrom rlang .data
 #'

@@ -27,6 +27,9 @@ logistic growth rate plot will always be produced.}
 
 \item{output_dir}{Outputs will be saved in this directory. Will create the directory if it does
 not exist.}
+
+\item{heatmap_width, heatmap_lab_offset}{Width and label-offset parameters for the constructed
+heatmap.}
 }
 \value{
 A ggtree plot

@@ -70,16 +70,22 @@ within a cluster it may be called as a defining mutation}
 belonging to each cluster given tis variable will be estimated using conditional logistic
 regression and adjusting for time.}
 
+\item{test_cluster_odds_value}{Vector of same length as \code{test_cluster_odds}. This variable
+will be dichotomised by testing for equality of the variable with this value (e.g.
+vaccine_breakthrough == 'yes'). If NULL, the variable is assumed to be continuous (e.g.
+patient_age).}
+
 \item{root_on_tip}{If input tree is not rooted, will root on this tip}
 
 \item{root_on_tip_sample_time}{Numeric time that tip was sampled}
 
 \item{detailed_output}{If TRUE will provide detailed figures for each cluster}
 
-\item{test_cluster_odds_values}{Vector of same length as \code{test_cluster_odds}. This variable
-will be dichotomised by testing for equality of the variable with this value (e.g.
-vaccine_breakthrough == 'yes'). If NULL, the variable is assumed to be continuous (e.g.
-patient_age).}
+\item{compute_gam}{Boolean. Should growth rates be summarised using a generalised additive model
+(in addition to the logistic model)?}
+
+\item{compute_cluster_muts}{Boolean. Should clusters of mutations (defining mutations etc) be
+identified?}
 }
 \value{
 Invisibly returns a data frame with cluster statistics.
