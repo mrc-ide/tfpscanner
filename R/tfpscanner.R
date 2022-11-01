@@ -767,7 +767,7 @@ tfpscan <- function(tre,
           ggplot2::ggsave(gtr,
             filename = glue::glue("{cldir}/clustertree.pdf"),
             height = max(6, floor(length(tu) / 5)),
-            width = min(44, max(24, sqrt(length(tu)))),
+            width = min(64, max(36, sqrt(length(tu)))),
             limitsize = FALSE
           )
         )
