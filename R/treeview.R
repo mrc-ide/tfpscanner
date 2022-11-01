@@ -1,13 +1,17 @@
 
 #' Generate interactive tree visualisations and scatter plots for illustrating scannint statistics.
 #'
-#' This will produce a set of html widgets which will highlight by colour and tooltips statistics such as growth rate and molecular clock outliers.
+#' This will produce a set of html widgets which will highlight by colour and tooltips statistics
+#' such as growth rate and molecular clock outliers.
 #'
-#' @param e0 Path to the scanner environment produced by \code{tfpscan}. Alternatively can pass the environment directly.
-#' @param branch_cols A character vector of statistics for which outputs should be produced. The logistic growth rate plot will always be produced.
+#' @param e0 Path to the scanner environment produced by \code{tfpscan}. Alternatively can pass the
+#'   environment directly.
+#' @param branch_cols A character vector of statistics for which outputs should be produced. The
+#'   logistic growth rate plot will always be produced.
 #' @param mutations A character vector of mutations which will be illustrated in a heatmap
 #' @param lineages A set of lineage names which will be used to subdivide outputs in scatter plots.
-#' @param output_dir Outputs will be saved in this directory. Will create the directory if it does not exist.
+#' @param output_dir Outputs will be saved in this directory. Will create the directory if it does
+#'   not exist.
 #' @import ggtree ape lubridate glue ggplot2 ggiraph
 #' @return A ggtree plot
 #' @export
@@ -32,7 +36,7 @@ treeview <- function(e0,
     e0 <- readRDS(e0)
   }
   sc0 <- e0$Y
-  cmuts <- lapply(1:nrow(sc0), function(i) {
+  cmuts <- lapply(seq_len(nrow(sc0)), function(i) {
     list(
       defining = strsplit(sc0$defining_mutations[i], split = "\\|")[[1]],
       all = strsplit(sc0$all_mutations[i], split = "\\|")[[1]]
@@ -45,7 +49,7 @@ treeview <- function(e0,
 
   # pick one tip from each cluster
   sc0$representative <- NA
-  for (i in 1:nrow(sc0)) {
+  for (i in seq_len(nrow(sc0))) {
     if (sc0$external_cluster[i]) {
       tu <- strsplit(sc0$tip[i], split = "\\|")[[1]]
       .sts <- e0$sts[tu]
@@ -78,8 +82,16 @@ treeview <- function(e0,
   # tree data frames
   ## tips
   sc2 <- sc0[!is.na(sc0$tr2mrca), ]
-  sc2$date_range <- sapply(1:nrow(sc2), function(i) glue("{sc2$least_recent_tip[i]} -> {sc2$most_recent_tip[i]}"))
-  tdvars <- unique(c(branch_cols, "logistic_growth_rate", "clock_outlier", "cluster_size", "date_range", "cluster_id", "region_summary", "cocirc_lineage_summary", "lineage", "tr2mrca"))
+  sc2$date_range <- sapply(
+    seq_len(nrow(sc2)),
+    function(i) glue("{sc2$least_recent_tip[i]} -> {sc2$most_recent_tip[i]}")
+  )
+  tdvars <- unique(
+    c(
+      branch_cols, "logistic_growth_rate", "clock_outlier", "cluster_size", "date_range",
+      "cluster_id", "region_summary", "cocirc_lineage_summary", "lineage", "tr2mrca"
+    )
+  )
   td0 <- sc2[
     sc2$tr2mrca <= Ntip(tr2),
     tdvars
@@ -175,19 +187,39 @@ treeview <- function(e0,
     if (is.null(colour_limits)) {
       colour_limits <- range(td[[vn]])
     }
-    gtr1 <- ggtree(dplyr::full_join(tr2, td, by = "node"), aes_string(colour = vn), ladderize = TRUE, right = TRUE, continuous = TRUE)
+    gtr1 <- ggtree(
+      dplyr::full_join(tr2, td, by = "node"),
+      aes_string(colour = vn),
+      ladderize = TRUE,
+      right = TRUE,
+      continuous = TRUE
+    )
 
     shapes <- c(Y = "\U2B24", N = "\U25C4")
     gtr1.1 <- gtr1 +
-      scale_color_gradientn(name = gsub(vn, patt = "_", rep = " "), colours = cols, limits = colour_limits, oob = scales::squish) +
-      geom_point(aes_string(color = vn, size = "cluster_size", shape = "as.factor(internal)"), data = gtr1$data) +
+      scale_color_gradientn(
+        name = gsub(vn, patt = "_", rep = " "),
+        colours = cols,
+        limits = colour_limits,
+        oob = scales::squish
+      ) +
+      geom_point(
+        aes_string(color = vn, size = "cluster_size", shape = "as.factor(internal)"),
+        data = gtr1$data
+      ) +
       scale_shape_manual(name = NULL, labels = NULL, values = shapes) +
       scale_size(name = "Cluster size", range = c(2, 16)) +
       ggtitle(glue("{Sys.Date()}, colour: {vn}")) + theme(legend.position = "top")
 
     for (i in seq_along(lins)) {
       if (!is.na(lin_nodes[i])) {
-        gtr1.1 <- gtr1.1 + geom_cladelabel(node = lin_nodes[i], label = lin_node_names[i], offset = .00001, colour = "black")
+        gtr1.1 <- gtr1.1 +
+          geom_cladelabel(
+            node = lin_nodes[i],
+            label = lin_node_names[i],
+            offset = .00001,
+            colour = "black"
+          )
       }
     }
 
@@ -298,11 +330,33 @@ treeview <- function(e0,
     genotype <- genotype[, -1, drop = FALSE]
 
     # make html widget
-    gtr1.1$data$mouseover <- sapply(1:length(ttdfs), function(i) {
-      paste0("Statistics:\n", ttdfs[i], "\n\nGeography:\n", ttregtabs[i], "\n\nCo-circulating with:\n", ttcocirc[i], "\n\n", ttdefmuts[i], "\n", ttallmuts[i], "\n", collapse = "\n")
+    gtr1.1$data$mouseover <- sapply(seq_along(ttdfs), function(i) {
+      paste0(
+        "Statistics:\n",
+        ttdfs[i],
+        "\n\nGeography:\n",
+        ttregtabs[i],
+        "\n\nCo-circulating with:\n",
+        ttcocirc[i],
+        "\n\n",
+        ttdefmuts[i],
+        "\n",
+        ttallmuts[i],
+        "\n",
+        collapse = "\n"
+      )
     })
     gtr1.1$data$colour_var <- gtr1.1$data[[vn]]
-    gtr1.2 <- gheatmap(gtr1.1, genotype, width = heatmap_width, offset = 0.0005, colnames_angle = -90, colnames_position = "top", colnames_offset_y = heatmap_lab_offset, legend_title = "Genotype")
+    gtr1.2 <- gheatmap(
+      gtr1.1,
+      genotype,
+      width = heatmap_width,
+      offset = 0.0005,
+      colnames_angle = -90,
+      colnames_position = "top",
+      colnames_offset_y = heatmap_lab_offset,
+      legend_title = "Genotype"
+    )
     gtr1.3 <- gtr1.2 +
       ggiraph::geom_point_interactive(aes(
         x = x, y = y,
@@ -323,7 +377,13 @@ treeview <- function(e0,
 
 
     # ~ font-family: "Lucida Console", "Courier New", monospace;
-    tooltip_css <- "background-color:black;color:grey;padding:14px;border-radius:8px;font-family:\"Courier New\",monospace;"
+    tooltip_css <- paste0(
+      "background-color:black;",
+      "color:grey;",
+      "padding:14px;",
+      "border-radius:8px;",
+      "font-family:\"Courier New\",monospace;"
+    )
     pgtr1.3 <- girafe(
       ggobj = gtr1.3, width_svg = 15,
       height_svg = max(14, floor(Ntip(tr2) / 10)),
@@ -337,7 +397,11 @@ treeview <- function(e0,
       file = as.character(glue("{output_dir}/tree-{vn}.html")),
       title = glue("SARS CoV 2 scan {Sys.Date()}")
     )
-    file.copy(as.character(glue("{output_dir}/tree-{vn}.html")), as.character(glue("{output_dir}/tree-{vn}-{Sys.Date()}.html")), overwrite = TRUE)
+    file.copy(
+      as.character(glue("{output_dir}/tree-{vn}.html")),
+      as.character(glue("{output_dir}/tree-{vn}-{Sys.Date()}.html")),
+      overwrite = TRUE
+    )
 
     gtr1.1
   }
@@ -392,7 +456,13 @@ treeview <- function(e0,
         axis.ticks.x = element_blank()
       )
 
-    tooltip_css <- "background-color:black;color:grey;padding:14px;border-radius:8px;font-family:\"Courier New\",monospace;"
+    tooltip_css <- paste0(
+      "background-color:black;",
+      "color:grey;",
+      "padding:14px;",
+      "border-radius:8px;",
+      "font-family:\"Courier New\",monospace;"
+    )
     g1 <- girafe(
       ggobj = p1, width_svg = 8,
       height_svg = 8,

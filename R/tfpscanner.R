@@ -1,28 +1,41 @@
 #' Compute scanner statistics for nodes in tree.
 #'
-#' Takes standard inputs in the form of a rooted phylogeny and data frame with required metadata (see below).
-#' Computes a logistic growth rate and a statistic for outlying values in a molecular clock (root to tip regression).
+#' Takes standard inputs in the form of a rooted phylogeny and data frame with required metadata
+#' (see below).
+#' Computes a logistic growth rate and a statistic for outlying values in a molecular clock (root to
+#' tip regression).
 #' Comparison sample is matched by time and region.
 #' If using parallel computation (ncpu>1), the code should be called via mpirun, e.g.
 #' mpirun -n <ncpu+1> R --slave -f <script>
 #'
-#' @param tre A phylogeny in ape::phylo or treeio::treedata form. If not rooted, must provide an outgroup (see below)
-#' @param amd A data frame containing required metadata for each tip in tree: sequence_name, sample_date, region. Optional metadata includes: sample_time(numeric), lineage, mutations.
+#' @param tre A phylogeny in ape::phylo or treeio::treedata form. If not rooted, must provide an
+#'   outgroup (see below)
+#' @param amd A data frame containing required metadata for each tip in tree: sequence_name,
+#'   sample_date, region. Optional metadata includes: sample_time(numeric), lineage, mutations.
 #' @param min_descendants Clade must have at least this many tips
 #' @param max_descendants Clade can have at most this many tips
 #' @param min_date Only include samples after this data
 #' @param max_date Only include samples before and including this date
-#' @param min_cluster_age_yrs Only include clades that have sample tips that span at least this value
+#' @param min_cluster_age_yrs Only include clades that have sample tips that span at least this
+#'   value
 #' @param min_blen Only compute statistics for nodes descended from branches of at least this length
 #' @param ncpu number cpu for multicore ops
 #' @param output_dir Path to directory where results will be saved
-#' @param num_ancestor_comparison When finding comparison sample for molecular clock stat, make sure sister clade has at least this many tips
-#' @param factor_geo_comparison  When finding comparison sample based on geography, make sure sample has this factor times the number within clade of interest
+#' @param num_ancestor_comparison When finding comparison sample for molecular clock stat, make sure
+#'   sister clade has at least this many tips
+#' @param factor_geo_comparison  When finding comparison sample based on geography, make sure sample
+#'   has this factor times the number within clade of interest
 #' @param Tg Approximate generation time in years. Growth rate is reported in these units.
 #' @param report_freq Print progress for every n'th node
-#' @param mutation_cluster_frequency_threshold If mutation is detected with more than this frequency within a cluster it may be called as a defining mutation
-#' @param test_cluster_odds A character vector of variable names in \code{amd}. The odds of a sample belonging to each cluster given tis variable will be estimated using conditional logistic regression and adjusting for time.
-#' @param test_cluster_odds_values Vector of same length as \code{test_cluster_odds}. This variable will be dichotomised by testing for equality of the variable with this value (e.g. vaccine_breakthrough == 'yes'). If NULL, the variable is assumed to be continuous (e.g. patient_age).
+#' @param mutation_cluster_frequency_threshold If mutation is detected with more than this frequency
+#'   within a cluster it may be called as a defining mutation
+#' @param test_cluster_odds A character vector of variable names in \code{amd}. The odds of a sample
+#'   belonging to each cluster given tis variable will be estimated using conditional logistic
+#'   regression and adjusting for time.
+#' @param test_cluster_odds_values Vector of same length as \code{test_cluster_odds}. This variable
+#'   will be dichotomised by testing for equality of the variable with this value (e.g.
+#'   vaccine_breakthrough == 'yes'). If NULL, the variable is assumed to be continuous (e.g.
+#'   patient_age).
 #' @param root_on_tip If input tree is not rooted, will root on this tip
 #' @param root_on_tip_sample_time Numeric time that tip was sampled
 #' @param detailed_output If TRUE will provide detailed figures for each cluster
@@ -47,7 +60,7 @@ tfpscan <- function(tre,
                     factor_geo_comparison = 5,
                     Tg = 7 / 365,
                     report_freq = 50,
-                    mutation_cluster_frequency_threshold = 0.75,
+                    mutation_cluster_frequency_threshold = 0.75, # nolint
                     test_cluster_odds = c(),
                     test_cluster_odds_value = c(),
                     root_on_tip = "Wuhan/WH04/2020",
@@ -98,7 +111,8 @@ tfpscan <- function(tre,
   }
 
   # retain only required variables
-  # amd <- amd[ , unique( c('sequence_name', 'sample_time', 'sample_date', 'region', 'lineage', 'mutations', test_cluster_odds) ) ]
+  # amd <- amd[ , unique( c('sequence_name', 'sample_time', 'sample_date', 'region', 'lineage',
+  # 'mutations', test_cluster_odds) ) ]
   amd <- amd[amd$sequence_name %in% tre$tip.label, ]
 
   # prune tree
@@ -137,7 +151,7 @@ tfpscan <- function(tre,
 
   # data structures to quickly look up tree data
   # copied/adapted from treestructure
-  {
+  { # nolint
     n <- Ntip(tre)
     nnode <- Nnode(tre)
     poedges <- tre$edge[ape::postorder(tre), ]
@@ -156,7 +170,7 @@ tfpscan <- function(tre,
     min_desc_time <- rep(Inf, n + nnode)
     min_desc_time[1:n] <- tlsts
     # postorder traverse
-    for (ie in 1:nrow(poedges)) {
+    for (ie in seq_len(nrow(poedges))) {
       a <- poedges[ie, 1]
       u <- poedges[ie, 2]
       ndesc[a] <- ndesc[a] + ndesc[u]
@@ -173,7 +187,7 @@ tfpscan <- function(tre,
       descendants[[u]][1] <- u
     }
     Ndesc_index <- rep(2, n + nnode)
-    for (ie in 1:nrow(poedges)) {
+    for (ie in seq_len(nrow(poedges))) {
       a <- poedges[ie, 1]
       u <- poedges[ie, 2]
       ## mem efficient way to fill in values for a
@@ -194,7 +208,7 @@ tfpscan <- function(tre,
     # ancestors
     st0 <- Sys.time()
     ancestors <- lapply(1:(n + nnode), function(u) integer())
-    for (ie in 1:nrow(preedges)) {
+    for (ie in seq_len(nrow(preedges))) {
       a <- preedges[ie, 1]
       u <- preedges[ie, 2]
       ancestors[[u]] <- c(ancestors[[a]], a)
@@ -262,7 +276,7 @@ tfpscan <- function(tre,
     estdf <- data.frame(time = .s1$time, estimated_logodds = .s1$estimated)
     estdf <- estdf[!duplicated(estdf$time), ]
     estdf <- estdf[order(estdf$time), ]
-    estdf <- cbind(estdf, t(sapply(1:nrow(estdf), function(k) {
+    estdf <- cbind(estdf, t(sapply(seq_len(nrow(estdf)), function(k) {
       .s2 <- .s1[.s1$time == estdf$time[k], ]
       n <- nrow(.s2)
       lo <- estdf$estimated_logodds[k]
@@ -324,7 +338,7 @@ tfpscan <- function(tre,
     }
     ## time dep growth ; needs a larger sample size
     X$estimated <- predict(m)
-    if (compute_gam & (length(tu) > 50)) {
+    if (compute_gam && (length(tu) > 50)) {
       m1 <- mgcv::gam(type == "clade" ~ s(time, bs = "bs", k = 4, m = 1), family = binomial(link = "logit"), data = X)
       X$estimated <- predict(m1)
 
@@ -418,7 +432,7 @@ tfpscan <- function(tre,
     }
     asids <- setdiff(descendantSids[[a]], descendantSids[[u]])
     mdf.a <- amd[amd$sequence_name %in% asids, ]
-    if (nrow(mdf.a) == 0 | nrow(mdf.u) == 0) {
+    if (nrow(mdf.a) == 0 || nrow(mdf.u) == 0) {
       return(list(defining = NA, all = NA))
     }
     vtabu <- sort(table(do.call(c, strsplit(mdf.u[[mut_variable]], split = "\\|"))) / nrow(mdf.u))
@@ -444,7 +458,7 @@ tfpscan <- function(tre,
     } else {
       y <- data.frame(Lineage = lins[1], Frequency = 1)
     }
-    y <- y[1:min(nrow(y), maxrows), ]
+    y <- y[seq_len(min(nrow(y), maxrows)), ]
     y$Frequency <- paste0(round(y$Frequency * 100), "%")
     paste(knitr::kable(y, "simple"), collapse = "\n") # convert to string
   }
@@ -461,13 +475,12 @@ tfpscan <- function(tre,
     } else {
       y <- data.frame(Region = regs[1], Frequency = 1)
     }
-    y <- y[1:min(nrow(y), maxrows), ]
+    y <- y[seq_len(min(nrow(y), maxrows)), ]
     y$Frequency <- paste0(round(y$Frequency * 100), "%")
     paste(knitr::kable(y, "simple"), collapse = "\n") # convert to string
   }
 
-  .cluster_tree <- function(tips) # tr2, amd
-  {
+  .cluster_tree <- function(tips) { # tr2, amd
     tr <- keep.tip(tre, tips)
     gtr <- ggtree(tr)
     mutlist <- strsplit(amd[match(tips, amd$sequence_name), ]$mutations, split = "\\|")
@@ -526,7 +539,17 @@ tfpscan <- function(tre,
     gtr2 <- gtr1
 
     if (length(allsegregating) < 100) {
-      gtr2 <- gheatmap(gtr1, as.data.frame(aas), width = .66, offset = 0.0005, colnames = FALSE, colnames_angle = -90, colnames_position = "top", colnames_offset_y = -2) + theme(legend.position = "none")
+      gtr2 <- gheatmap(
+        gtr1,
+        as.data.frame(aas),
+        width = .66,
+        offset = 0.0005,
+        colnames = FALSE,
+        colnames_angle = -90,
+        colnames_position = "top",
+        colnames_offset_y = -2
+      ) +
+        theme(legend.position = "none")
     }
     gtr2
   }
@@ -593,7 +616,17 @@ tfpscan <- function(tre,
       cldir <- glue("{output_dir}/{as.character(u)}")
       dir.create(cldir, showWarnings = FALSE)
       # summary stat data
-      write.csv(data.frame(statistic = t(X[1, c("logistic_growth_rate", "simple_logistic_growth_rate", "logistic_growth_rate_p", "gam_logistic_growth_rate", "simple_logistic_model_support", "clock_outlier")])), file = glue("{cldir}/summary.csv"))
+      write.csv(
+        data.frame(
+          statistic = t(
+            X[1, c(
+              "logistic_growth_rate", "simple_logistic_growth_rate", "logistic_growth_rate_p",
+              "gam_logistic_growth_rate", "simple_logistic_model_support", "clock_outlier"
+            )]
+          )
+        ),
+        file = glue("{cldir}/summary.csv")
+      )
       # freq plot
       if (!is.null(lgs$plot)) {
         suppressMessages(ggsave(lgs$plot, file = glue("{cldir}/frequency.pdf")))
@@ -649,7 +682,7 @@ tfpscan <- function(tre,
           return(e)
         }
       )
-    } -> Y
+    } -> Y # nolint
   } else {
     Y <- c()
     for (u in nodes) {
