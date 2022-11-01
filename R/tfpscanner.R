@@ -402,10 +402,9 @@ tfpscan <- function(tre,
 
     if (compute_gam && (length(tu) > 50)) {
       m1 <- mgcv::gam(
-        type == "clade" ~ s(time, bs = "bs", k = 4, m = 1
-      ),
-      family = stats::binomial(link = "logit"),
-      data = X
+        type == "clade" ~ s(time, bs = "bs", k = 4, m = 1),
+        family = stats::binomial(link = "logit"),
+        data = X
       )
       X$estimated <- stats::predict(m1)
 
@@ -512,7 +511,6 @@ tfpscan <- function(tre,
   .cluster_muts <- function(u,
                             a = NULL,
                             mut_variable = "mutations") {
-
     tu <- descendantSids[[u]]
     mdf.u <- amd[amd$sequence_name %in% tu, ]
     ## find comparator ancestor
