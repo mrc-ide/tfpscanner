@@ -1,45 +1,49 @@
 #' Compute scanner statistics for nodes in tree.
 #'
-#' Takes standard inputs in the form of a rooted phylogeny and data frame with required metadata (see below).
-#' Computes a logistic growth rate and a statistic for outlying values in a molecular clock (root to tip regression).
+#' Takes standard inputs in the form of a rooted phylogeny and data frame with required metadata
+#' (see below).
+#' Computes a logistic growth rate and a statistic for outlying values in a molecular clock (root to
+#' tip regression).
 #' Comparison sample is matched by time and region.
 #' If using parallel computation (ncpu>1), the code should be called via mpirun, e.g.
 #' mpirun -n <ncpu+1> R --slave -f <script>
 #'
-#' @param tre A phylogeny in ape::phylo or treeio::treedata form. If not rooted, must provide
-#' an outgroup (see below)
+#' @param tre A phylogeny in ape::phylo or treeio::treedata form. If not rooted, must provide an
+#'   outgroup (see below)
 #' @param amd A data frame containing required metadata for each tip in tree: sequence_name,
-#' sample_date, region. Optional metadata includes: sample_time(numeric), lineage, mutations.
+#'   sample_date, region. Optional metadata includes: sample_time(numeric), lineage, mutations.
 #' @param min_descendants Clade must have at least this many tips
 #' @param max_descendants Clade can have at most this many tips
 #' @param min_date Only include samples after this data
 #' @param max_date Only include samples before and including this date
-#' @param min_cluster_age_yrs Only include clades that have sample tips that span at least
-#' this value
-#' @param min_blen Only compute statistics for nodes descended from branches of at least
-#' this length
+#' @param min_cluster_age_yrs Only include clades that have sample tips that span at least this
+#'   value
+#' @param min_blen Only compute statistics for nodes descended from branches of at least this length
 #' @param ncpu number cpu for multicore ops
 #' @param output_dir Path to directory where results will be saved
-#' @param num_ancestor_comparison When finding comparison sample for molecular clock stat,
-#' make sure sister clade has at least this many tips
-#' @param factor_geo_comparison  When finding comparison sample based on geography, make
-#' sure sample has this factor times the number within clade of interest
+#' @param num_ancestor_comparison When finding comparison sample for molecular clock stat, make sure
+#'   sister clade has at least this many tips
+#' @param factor_geo_comparison  When finding comparison sample based on geography, make sure sample
+#'   has this factor times the number within clade of interest
 #' @param Tg Approximate generation time in years. Growth rate is reported in these units.
 #' @param report_freq Print progress for every n'th node
-#' @param mutation_cluster_frequency_threshold If mutation is detected with more than this
-#' frequency within a cluster it may be called as a defining mutation
-#' @param test_cluster_odds A character vector of variable names in \code{amd}. The odds of
-#' a sample belonging to each cluster given tis variable will be estimated using conditional
-#' logistic regression and adjusting for time.
-#' @param test_cluster_odds_value Vector of same length as \code{test_cluster_odds}. This
-#' variable will be dichotomised by testing for equality of the variable with this value
-#' (e.g. vaccine_breakthrough == 'yes'). If NULL, the variable is assumed to be continuous
-#' (e.g. patient_age).
+#' @param mutation_cluster_frequency_threshold If mutation is detected with more than this frequency
+#'   within a cluster it may be called as a defining mutation
+#' @param test_cluster_odds A character vector of variable names in \code{amd}. The odds of a sample
+#'   belonging to each cluster given tis variable will be estimated using conditional logistic
+#'   regression and adjusting for time.
+#' @param test_cluster_odds_values Vector of same length as \code{test_cluster_odds}. This variable
+#'   will be dichotomised by testing for equality of the variable with this value (e.g.
+#'   vaccine_breakthrough == 'yes'). If NULL, the variable is assumed to be continuous (e.g.
+#'   patient_age).
 #' @param root_on_tip If input tree is not rooted, will root on this tip
 #' @param root_on_tip_sample_time Numeric time that tip was sampled
+#' @param detailed_output If TRUE will provide detailed figures for each cluster
+#'
 #' @importFrom foreach %dopar%
 #' @importFrom ggtree %<+%
 #' @importFrom rlang .data
+#'
 #' @return Invisibly returns a data frame with cluster statistics.
 #' @export
 #'
@@ -62,7 +66,10 @@ tfpscan <- function(tre,
                     test_cluster_odds = c(),
                     test_cluster_odds_value = c(),
                     root_on_tip = "Wuhan/WH04/2020",
-                    root_on_tip_sample_time = 2020) {
+                    root_on_tip_sample_time = 2020,
+                    detailed_output = FALSE,
+                    compute_gam = TRUE,
+                    compute_cluster_muts = TRUE) {
   message(paste("Starting scan", Sys.time()), "\n")
 
   if (!dir.exists(output_dir)) {
@@ -99,6 +106,11 @@ tfpscan <- function(tre,
   # filter by sample time
   amd <- amd[(amd$sample_time >= min_time) & (amd$sts <= max_time), ]
   sts <- stats::setNames(amd$sample_time, amd$sequence_name)
+
+  # mutations var
+  if (!("mutations" %in% colnames(amd))) {
+    amd$mutations <- "-"
+  }
 
   # retain only required variables
   # amd <- amd[ , unique( c('sequence_name', 'sample_time',
@@ -139,10 +151,10 @@ tfpscan <- function(tre,
     tre <- tr2
   }
 
-  sts <- stats::setNames(amd$sample_time[match(
-    tr2$tip.label,
-    amd$sequence_name
-  )], tr2$tip.label)
+  # var's for fast lookup time and region
+  itr2 <- match(tr2$tip.label, amd$sequence_name)
+  sts <- stats::setNames(amd$sample_time[itr2], tr2$tip.label)
+  sequence_name2region <- stats::setNames(amd$region[itr2], tr2$tip.label)
 
   # root to tip
   ndel <- ape::node.depth.edgelength(tre)
@@ -258,28 +270,25 @@ tfpscan <- function(tre,
     minstu <- min(stats::na.omit(stu))
     maxstu <- max(stats::na.omit(stu))
 
-    # df for all tips outside of tu overlapping in time and region
-    amd1 <- amd[(amd$sample_time >= minstu) & (amd$sample_time <= maxstu), ] # c('sequence_name', 'sample_date', 'region')
-    amd1 <- amd1[!(amd1$sequence_name %in% tu), ]
-    amd1 <- amd1[amd1$region %in% unique(amd$region[amd$sequence_name %in% tu]), ]
-
+    rtu <- sequence_name2region[tu]
+    ta_r <- names(sequence_name2region[sequence_name2region %in% unique(rtu)])
+    ta_t <- names(sts)[sts >= minstu & sts <= maxstu]
+    ta0 <- setdiff(intersect(ta_r, ta_t), tu)
+    ta0r <- sequence_name2region[ta0]
 
     # weight for region
-    w <- table(amd$region[match(descendantSids[[u]], amd$sequence_name)])
-    w <- w / (table(amd1$region)[names(w)])
+    w <- table(rtu)
+    w <- w / (table(ta0r)[names(w)])
     w[is.na(w)] <- 0
+    wa <- w[ta0r]
+    wa[is.na(wa)] <- 0
 
-    na <- min(nrow(amd1), nu * nX)
+    na <- min(length(ta0), nu * nX)
     if (na < nu) {
       return(NULL)
     }
-    amd1$w <- w[amd1$region]
-    amd1 <- amd1[!is.na(amd1$w), ]
-    ta <- sample(amd1$sequence_name,
-      replace = FALSE,
-      size = na,
-      prob = amd1$w
-    )
+    ta <- sample(ta0, replace = FALSE, size = na, prob = wa)
+
     ta
   }
 
@@ -382,6 +391,7 @@ tfpscan <- function(tre,
     s <- summary(m)
     rv <- unname(stats::coef(m)[2] * generation_time_scale)
     p <- NA
+
     if (is.na(rv)) {
       message("NA growth stat, node: ", u)
     } else {
@@ -389,11 +399,10 @@ tfpscan <- function(tre,
     }
     ## time dep growth ; needs a larger sample size
     X$estimated <- stats::predict(m)
-    if (length(tu) > 50) {
-      m1 <- mgcv::gam(type == "clade" ~ s(time,
-        bs = "bs",
-        k = 4,
-        m = 1
+
+    if (compute_gam && (length(tu) > 50)) {
+      m1 <- mgcv::gam(
+        type == "clade" ~ s(time, bs = "bs", k = 4, m = 1
       ),
       family = stats::binomial(link = "logit"),
       data = X
@@ -405,6 +414,7 @@ tfpscan <- function(tre,
         length = 5
       )
       tout1 <- tout[4] + diff(tout)[1] / 2
+
       dlo <- diff(stats::predict(m1,
         newdata = data.frame(
           type = NA,
@@ -442,6 +452,7 @@ tfpscan <- function(tre,
     if (is.na(a)) {
       return(NA)
     }
+
     tu <- descendantSids[[u]]
     ta <- setdiff(descendantSids[[a]], tu)
     sta <- sts[ta]
@@ -471,6 +482,7 @@ tfpscan <- function(tre,
     tu <- descendantSids[[u]]
     sta <- sts[ta]
     stu <- sts[tu]
+
     X <- data.frame(
       tip = c(ta, tu),
       time = c(sta, stu),
@@ -500,6 +512,7 @@ tfpscan <- function(tre,
   .cluster_muts <- function(u,
                             a = NULL,
                             mut_variable = "mutations") {
+
     tu <- descendantSids[[u]]
     mdf.u <- amd[amd$sequence_name %in% tu, ]
     ## find comparator ancestor
@@ -556,7 +569,6 @@ tfpscan <- function(tre,
     paste(knitr::kable(y, "simple"), collapse = "\n") # convert to string
   }
 
-
   .cluster_tree <- function(tips) { # tr2, amd # tre?
     tr <- ape::keep.tip(tre, tips)
     gtr <- ggtree::ggtree(tr)
@@ -577,6 +589,7 @@ tfpscan <- function(tre,
       pattern = ":[*]"
     )]
     annots <- rep("", ape::Ntip(tr) + ape::Nnode(tr))
+
     if (length(allsegregating) > 0) {
       allseg1 <- substr(regmatches(allsegregating, regexpr(allsegregating,
         pattern = ":[A-Z]"
@@ -606,13 +619,14 @@ tfpscan <- function(tre,
       aas <- aas[, order(sites)]
       aas[is.na(aas)] <- "X"
       sites <- sort(sites)
-      aas1 <- ape::as.AAbin(aas)
-      aas2 <- phangorn::as.phyDat(aas1)
-      ap <- phangorn::ancestral.pars(tr,
+      aas2 <- phangorn::as.phyDat(aas, type = "AA")
+      ap <- phangorn::ancestral.pars(
+        tr,
         aas2,
         return = "phyDat"
       )
       ap1 <- as.character(ap)
+
       for (ie in ape::postorder(tr)) {
         a <- tr$edge[ie, 1]
         u <- tr$edge[ie, 2]
@@ -628,15 +642,16 @@ tfpscan <- function(tre,
       annot = annots,
       stringsAsFactors = FALSE
     )
+
     gtr1 <- gtr %<+% nodedf
     gtr1 <- gtr1 + ggplot2::geom_label(ggplot2::aes(
       x = .data$branch,
       label = .data$annot,
       size = 6
     ))
-
     gtr1 <- gtr1 + ggtree::geom_tiplab(align = TRUE)
     gtr2 <- gtr1
+
     if (length(allsegregating) < 100) {
       gtr2 <- ggtree::gheatmap(gtr1,
         as.data.frame(aas),
@@ -651,7 +666,6 @@ tfpscan <- function(tre,
     }
     gtr2
   }
-
 
   # all analyses for a particular node
   .process.node <- function(u) {
@@ -670,7 +684,11 @@ tfpscan <- function(tre,
     lineage_summary <- tryCatch(.lineage_summary(tu), error = function(e) as.character(e))
 
     a <- .get_comparator_ancestor(u)
-    cmut <- .cluster_muts(u, a)
+    if (compute_cluster_muts) {
+      cmut <- .cluster_muts(u, a)
+    } else {
+      cmut <- list(defining = NA, all = NA)
+    }
 
     X <- data.frame(
       cluster_id = as.character(u),
@@ -702,6 +720,7 @@ tfpscan <- function(tre,
       all_mutations = paste(cmut$all, collapse = "|"),
       stringsAsFactors = FALSE
     )
+
     for (i in seq_along(test_cluster_odds)) {
       vn <- test_cluster_odds[i]
       val <- test_cluster_odds_value[i]
@@ -713,58 +732,64 @@ tfpscan <- function(tre,
       i <- which(nodes == u)
       message(paste("Progress", round(100 * i / length(nodes)), "%"))
     }
-    cldir <- glue::glue("{output_dir}/{as.character(u)}")
-    dir.create(cldir, showWarnings = FALSE)
-    # summary stat data
-    utils::write.csv(data.frame(statistic = t(X[1, c(
-      "logistic_growth_rate",
-      "simple_logistic_growth_rate",
-      "logistic_growth_rate_p",
-      "gam_logistic_growth_rate",
-      "simple_logistic_model_support",
-      "clock_outlier"
-    )])),
-    file = glue::glue("{cldir}/summary.csv")
-    )
-    # freq plot
-    if (!is.null(lgs$plot)) {
-      suppressMessages(ggplot2::ggsave(lgs$plot,
-        filename = glue::glue("{cldir}/frequency.pdf")
-      ))
-      suppressMessages(ggplot2::ggsave(lgs$plot,
-        filename = glue::glue("{cldir}/frequency.png"),
-        bg = "white"
-      ))
-    }
-    # tree plot
-    if (length(tu) < 1e3) {
-      gtr <- .cluster_tree(tu)
-      suppressMessages(
-        ggplot2::ggsave(gtr,
-          filename = glue::glue("{cldir}/clustertree.pdf"),
-          height = max(6, floor(length(tu) / 5)),
-          width = min(44, max(24, sqrt(length(tu)))),
-          limitsize = FALSE
+    if (detailed_output) {
+      cldir <- glue::glue("{output_dir}/{as.character(u)}")
+      dir.create(cldir, showWarnings = FALSE)
+
+      # summary stat data
+      utils::write.csv(data.frame(statistic = t(X[1, c(
+        "logistic_growth_rate",
+        "simple_logistic_growth_rate",
+        "logistic_growth_rate_p",
+        "gam_logistic_growth_rate",
+        "simple_logistic_model_support",
+        "clock_outlier"
+      )])),
+      file = glue::glue("{cldir}/summary.csv")
+      )
+      # freq plot
+      if (!is.null(lgs$plot)) {
+        suppressMessages(ggplot2::ggsave(lgs$plot,
+          filename = glue::glue("{cldir}/frequency.pdf")
+        ))
+        suppressMessages(ggplot2::ggsave(lgs$plot,
+          filename = glue::glue("{cldir}/frequency.png"),
+          bg = "white"
+        ))
+      }
+
+      # tree plot
+      if (length(tu) < 1e3) {
+        gtr <- .cluster_tree(tu)
+        suppressMessages(
+          ggplot2::ggsave(gtr,
+            filename = glue::glue("{cldir}/clustertree.pdf"),
+            height = max(6, floor(length(tu) / 5)),
+            width = min(44, max(24, sqrt(length(tu)))),
+            limitsize = FALSE
+          )
         )
+      }
+
+      # clock figure TODO
+      # tip table
+      utils::write.csv(amd[amd$sequence_name %in% tu, ],
+        file = glue::glue("{cldir}/sequences.csv")
+      )
+      # reg summary
+      utils::write.csv(reg_summary,
+        file = glue::glue("{cldir}/regional_composition.csv")
+      )
+      # lineage summary
+      utils::write.csv(lineage_summary,
+        file = glue::glue("{cldir}/lineage_composition.csv")
+      )
+      # cocirc lineage summary
+      utils::write.csv(cocirc_summary,
+        file = glue::glue("{cldir}/cocirculating_lineages.csv")
       )
     }
-    # clock figure TODO
-    # tip table
-    utils::write.csv(amd[amd$sequence_name %in% tu, ],
-      file = glue::glue("{cldir}/sequences.csv")
-    )
-    # reg summary
-    utils::write.csv(reg_summary,
-      file = glue::glue("{cldir}/regional_composition.csv")
-    )
-    # lineage summary
-    utils::write.csv(lineage_summary,
-      file = glue::glue("{cldir}/lineage_composition.csv")
-    )
-    # cocirc lineage summary
-    utils::write.csv(cocirc_summary,
-      file = glue::glue("{cldir}/cocirculating_lineages.csv")
-    )
+
     X
   }
 
@@ -775,6 +800,7 @@ tfpscan <- function(tre,
   nodes <- intersect(nodes, nodes_blenConstraintSatisfied)
   report_nodes <- nodes[seq(1, length(nodes), by = report_freq)] # progress reporting
   node_ancestors <- do.call(c, lapply(nodes, function(u) ancestors[[u]]))
+
   if (ncpu > 1) {
     message("Initiating MPI cluster")
     mpiclust <- doMPI::startMPIcluster(count = ncpu)
@@ -797,10 +823,14 @@ tfpscan <- function(tre,
   } else {
     Y <- c()
     for (u in nodes) {
-      X <- .process.node(u)
+      X <- tryCatch(.process.node(u), error = function(e) {
+        saveRDS(e, file = glue("{u}-err.rds"))
+        return(e)
+      })
       Y <- rbind(Y, X)
     }
   }
+
   if (!all(nodes %in% Y$node_number)) {
     stop("Statistics not computed for all nodes. Possible that memory exceeded with ncpu > 1. Try with ncpu = 1.")
   }
@@ -821,9 +851,6 @@ tfpscan <- function(tre,
   }
   invisible(Y)
 }
-
-
-
 
 #' Run a fast treedater/mlesky analysis for a given node in the scanner output
 #' @param u integer

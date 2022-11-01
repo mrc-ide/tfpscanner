@@ -1,29 +1,30 @@
-
-#' Generate interactive tree visualisations and scatter plots for illustrating
-#' scannint statistics.
+#' Generate interactive tree visualisations and scatter plots for illustrating scannint statistics.
 #'
-#' This will produce a set of html widgets which will highlight by colour and
-#' tooltips statistics such as growth rate and molecular clock outliers.
+#' This will produce a set of html widgets which will highlight by colour and tooltips statistics
+#' such as growth rate and molecular clock outliers.
 #'
-#' @param e0 Path to the scanner environment produced by \code{tfpscan}. Alternatively
-#' can pass the environment directly.
-#' @param branch_cols A character vector of statistics for which outputs should be
-#' produced. The logistic growth rate plot will always be produced.
-#' @param mutations A character vector of mutations which will be illustrated in a
-#' heatmap
-#' @param lineages A set of lineage names which will be used to subdivide outputs in
-#' scatter plots.
-#' @param output_dir Outputs will be saved in this directory. Will create the directory
-#' if it does not exist.
+#' @param e0 Path to the scanner environment produced by \code{tfpscan}. Alternatively can pass the
+#'   environment directly.
+#' @param branch_cols A character vector of statistics for which outputs should be produced. The
+#'   logistic growth rate plot will always be produced.
+#' @param mutations A character vector of mutations which will be illustrated in a heatmap
+#' @param lineages A set of lineage names which will be used to subdivide outputs in scatter plots.
+#' @param output_dir Outputs will be saved in this directory. Will create the directory if it does
+#'   not exist.
+#'
 #' @importFrom rlang .data
+#'
 #' @return A ggtree plot
+#'
 #' @export
 
 treeview <- function(e0,
                      branch_cols = c("logistic_growth_rate", "clock_outlier"),
                      mutations = c("S:A222V", "S:Y145H", "N:Q9L", "S:E484K"),
                      lineages = c("AY\\.9", "AY\\.43", "AY\\.4\\.2"),
-                     output_dir = "treeview") {
+                     output_dir = "treeview",
+                     heatmap_width = .075,
+                     heatmap_lab_offset = -6) {
   # require logistic growth rate, prevent non-empty
   branch_cols <- unique(c(
     "logistic_growth_rate",
@@ -34,7 +35,6 @@ treeview <- function(e0,
     showWarnings = FALSE
   )
 
-
   # load env
   if (is.character(e0)) {
     e0 <- readRDS(e0)
@@ -42,8 +42,8 @@ treeview <- function(e0,
   sc0 <- e0$Y
   cmuts <- lapply(seq_len(nrow(sc0)), function(i) {
     list(
-      defining = strsplit(sc0$all_mutations[i], split = "\\|")[[1]],
-      all = strsplit(sc0$defining_mutations[i], split = "\\|")[[1]]
+      defining = strsplit(sc0$defining_mutations[i], split = "\\|")[[1]],
+      all = strsplit(sc0$all_mutations[i], split = "\\|")[[1]]
     )
   })
   names(cmuts) <- sc0$cluster_id
@@ -94,6 +94,7 @@ treeview <- function(e0,
       sc0$tr2mrca[sc0$node_number == a] <- inode
     }
   }
+
   ## tips (takes precedence if overlap in tr2mrca )
   i <- which(sc0$representative %in% tr2$tip.label)
   sc0$tr2mrca[i] <- match(
@@ -120,6 +121,7 @@ treeview <- function(e0,
     "lineage",
     "tr2mrca"
   ))
+
   td0 <- sc2[sc2$tr2mrca <= ape::Ntip(tr2), tdvars]
   td0$lineages <- td0$lineage
   td0$cocirc_summary <- td0$cocirc_lineage_summary
@@ -178,19 +180,34 @@ treeview <- function(e0,
   # find a good internal node to represent the mrca of each lineage
   lin_nodes <- c()
   lin_node_names <- c()
+
   for (lin in lins) {
     whichrep <- stats::na.omit(sc0$representative[sc0$lineage1 == lin])
+    res <- NULL
     if (length(whichrep) == 1) {
       res <- which(tr2$tip.label == whichrep)
     } else {
       res <- ape::getMRCA(tr2, whichrep)
+      # ~ 			get desc tips
+      itr2 <- which(sc0$tr2mrca == res)
+      if (length(itr2) == 1) {
+        tips <- strsplit(sc0[itr2, "tips"], split = "\\|")[[1]]
+        # ~ 			check lineage
+        tipslins <- e0$amd$lineage[match(tips, e0$amd$sequence_name)]
+        # ~ 			check major lineage is lin
+        txtl <- table(tipslins)
+        if (names(txtl[which.max(txtl)]) != lin) {
+          res <- NULL
+        }
+      } else {
+        res <- NULL
+      }
     }
     if (!is.null(res)) {
       lin_nodes <- c(lin_nodes, res)
       lin_node_names <- c(lin_node_names, lin)
     }
-    # lin_node_names <- lin_node_names[!duplicated(lin_nodes) ]
-    # lin_nodes <- lin_nodes[!duplicated(lin_nodes) ]
+
     res
   }
 
@@ -216,6 +233,7 @@ treeview <- function(e0,
       Y = "\U2B24",
       N = "\U25C4"
     )
+
     gtr1.1 <- gtr1 +
       ggplot2::scale_color_gradientn(
         name = gsub(vn, pattern = "_", replacement = " "),
@@ -317,6 +335,7 @@ treeview <- function(e0,
         .muts[o]
       }))
     }
+
     ttdefmuts <- sapply(match(gtr1.1$data$cluster_id, sc0$cluster_id), function(isc0) {
       if (is.na(isc0)) {
         return("")
@@ -392,13 +411,14 @@ treeview <- function(e0,
     gtr1.1$data$colour_var <- gtr1.1$data[[vn]]
     gtr1.2 <- ggtree::gheatmap(gtr1.1,
       genotype,
-      width = .075,
+      width = heatmap_width,
       offset = 0.0005,
       colnames_angle = -90,
       colnames_position = "top",
-      colnames_offset_y = -6,
+      colnames_offset_y = heatmap_lab_offset,
       legend_title = "Genotype"
     )
+
     gtr1.3 <- gtr1.2 +
       ggiraph::geom_point_interactive(ggplot2::aes(
         x = .data$x,
@@ -429,7 +449,6 @@ treeview <- function(e0,
       ) +
       ggplot2::theme(legend.position = "top")
 
-
     # ~ font-family: "Lucida Console", "Courier New", monospace;
     tooltip_css <- "background-color:black;color:grey;padding:14px;border-radius:8px;font-family:\"Courier New\",monospace;" # nolint
     pgtr1.3 <- ggiraph::girafe(
@@ -456,7 +475,6 @@ treeview <- function(e0,
 
     gtr1.1
   }
-
 
   # 	#' @param pldf the data element of a tree plot # to move to an outside function later
   .pl_cluster_sina <- function(pldf,
@@ -487,11 +505,10 @@ treeview <- function(e0,
     }
 
     sc1$mutation_lineage <- paste(ymut, ylin, sep = "_")
-
     fx <- as.factor(sc1$mutation_lineage)
     sc1$x <- as.numeric(fx)
     sc1$x <- stats::rnorm(nrow(sc1), sc1$x, .15) ## seed value???
-    sc1$y <- sc1$logistic_growth_rate
+    sc1$y <- sc1[[varx]]
 
     p1 <- ggplot2::ggplot(sc1) +
       ggiraph::geom_point_interactive(
@@ -507,8 +524,12 @@ treeview <- function(e0,
         data = sc1
       ) +
       ggplot2::xlab("Lineage and/or mutation") +
-      ggplot2::ylab("Logistic growth rate") +
-      ggplot2::geom_hline(ggplot2::aes(yintercept = 0))
+      ggplot2::ylab(varx) +
+      ggplot2::geom_hline(ggplot2::aes(yintercept = 0)) +
+      ggplot2::theme(
+        axis.text.x =  ggplot2::element_blank(),
+        axis.ticks.x = ggplot2::element_blank()
+      )
 
     tooltip_css <- "background-color:black;color:grey;padding:14px;border-radius:8px;font-family:\"Courier New\",monospace;" # nolint
     g1 <- ggiraph::girafe(
@@ -545,6 +566,15 @@ treeview <- function(e0,
       lineage_regexp = lineages
     )
   )
+  for (vn in setdiff(branch_cols, c("logistic_growth_rate"))) {
+    suppressWarnings(
+      .pl_cluster_sina(pldf,
+        varx = vn,
+        mut_regexp = mutations,
+        lineage_regexp = lineages
+      )
+    )
+  }
 
   invisible(pl)
 }
