@@ -1,4 +1,17 @@
-#' @param pldf the data element of a tree plot # to move to an outside function later
+#' Create a sina plot against lineage
+#'
+#' Side-effect: this function creates a plot and stores it to a file.
+#'
+#' @param pldf  Data-frame. The data element of a tree plot.
+#' @param output_dir  String. The directory within which the plot should be stored.
+#' @param varx  String. Which variable in \code{pldf} should be plotted on the y-axis.
+#' @param mut_regexp  String. Regular-expression(s) for restricting the plot to a subset of the rows
+#'   in \code{pldf}. Only rows with an "allmuts" entry that matches one of these regular expressions
+#'   will be presented. If NULL, all rows are presented.
+#' @param lineage_regexp  String. Regular-expression(s) for restricting the lineages that are
+#'   presented in the plot. Only those rows of \code{pldf} with a "lineage" entry that matches one
+#'   of these regular expressions will be presented. If NULL, all rows are presented.
+
 plot_cluster_sina <- function(pldf,
                               output_dir,
                               varx = "logistic_growth_rate",
