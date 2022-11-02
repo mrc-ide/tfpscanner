@@ -30,10 +30,12 @@ Imports:
   treedater,
   utils
 Suggests: 
-  doMPI
+    doMPI,
+    testthat (>= 3.0.0)
 Remotes: 
   emvolz-phylodynamics/mlesky
 SystemRequirements: libopenmpi-dev
 Encoding: UTF-8
 License: MIT + file LICENSE
 RoxygenNote: 7.2.1
+Config/testthat/edition: 3
