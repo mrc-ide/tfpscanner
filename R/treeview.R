@@ -273,44 +273,26 @@ treeview <- function(e0,
       )
     })
 
-
     ## table with geo composition
     ttregtabs <- gtr1.1$data$region_summary #
     ## cocirc
     ttcocirc <- gtr1.1$data$cocirc_summary #
-    ## defining muts
-    .sort.muts <- function(muts) {
-      if (length(muts) == 0) {
-        return("")
-      }
-      pre <- sapply(strsplit(muts, split = ":"), "[", 1)
-      upres <- sort(unique(pre))
-      do.call(c, lapply(upres, function(.pre) {
-        .muts <- muts[pre == .pre]
-        .muts1 <- sapply(strsplit(.muts,
-          split = ":"
-        ), "[", 2)
-        sites <- regmatches(
-          .muts1,
-          regexpr(.muts1,
-            pattern = "[0-9]+"
-          )
-        )
-        o <- order(as.numeric(sites))
-        .muts[o]
-      }))
-    }
 
+    ## defining muts
     ttdefmuts <- sapply(match(gtr1.1$data$cluster_id, sc0$cluster_id), function(isc0) {
       if (is.na(isc0)) {
         return("")
       }
       paste(
-        sep = "\n", "Cluster branch mutations:",
+        sep = "\n",
+        "Cluster branch mutations:",
         gsub(
           x = tryCatch(
             stringr::str_wrap(
-              paste(collapse = " ", .sort.muts(cmuts[[as.character(sc0$node_number[isc0])]]$defining)),
+              paste(
+                collapse = " ",
+                sort_mutations(cmuts[[as.character(sc0$node_number[isc0])]]$defining)
+              ),
               width = 60
             ),
             error = function(e) browser()
@@ -327,12 +309,13 @@ treeview <- function(e0,
         return("")
       }
       paste(
-        sep = "\n", "All mutations:",
+        sep = "\n",
+        "All mutations:",
         gsub(
           x = stringr::str_wrap(
             paste(
               collapse = " ",
-              .sort.muts(cmuts[[as.character(sc0$node_number[isc0])]]$all)
+              sort_mutations(cmuts[[as.character(sc0$node_number[isc0])]]$all)
             ),
             width = 60
           ),

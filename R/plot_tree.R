@@ -71,3 +71,36 @@ create_noninteractive_ggtree <- function(ggtree_data,
 
   gtr1.1
 }
+
+#' Sorts a vector of mutations
+#'
+#' @param   muts    String. Vector of mutations. Each string must be a separate mutation
+#'   (e.g., "S:A243del"). The mutations have a prefix ("S:", "N:") and a positional description of
+#'   the protein-level mutation ("T205I" for Thr to Ile mutation at position 205).
+#'
+#' @return  String. A vector of the same length as \code{muts}. The mutations are sorted by prefix
+#'   and then by the location of the mutation.
+
+sort_mutations <- function(muts) {
+  if (length(muts) == 0) {
+    return("")
+  }
+  pre <- sapply(strsplit(muts, split = ":"), "[", 1)
+  upres <- sort(unique(pre))
+  sorted_mutations <- do.call(c, lapply(upres, function(.pre) {
+    .muts <- muts[pre == .pre]
+    .muts1 <- sapply(strsplit(.muts,
+      split = ":"
+    ), "[", 2)
+    sites <- regmatches(
+      .muts1,
+      regexpr(.muts1,
+        pattern = "[0-9]+"
+      )
+    )
+    o <- order(as.numeric(sites))
+    .muts[o]
+  }))
+
+  sorted_mutations
+}

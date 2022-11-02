@@ -7,6 +7,7 @@ colour
 Config
 CoV
 cpu
+del
 dev
 dichotomised
 doMPI
@@ -19,6 +20,7 @@ ggplot
 ggtree
 htmlwidgets
 ide
+Ile
 knitr
 libopenmpi
 lubridate
@@ -50,6 +52,7 @@ summarised
 SystemRequirements
 testthat
 tfpscanner
+Thr
 tis
 tooltips
 treedata
