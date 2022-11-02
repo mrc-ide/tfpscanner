@@ -24,32 +24,13 @@ plot_cluster_sina <- function(pldf,
     lineage_regexp = lineage_regexp
   )
 
-  p1 <- ggplot2::ggplot(sc1) +
-    ggiraph::geom_point_interactive(
-      ggplot2::aes(
-        x = .data$x,
-        y = .data$y,
-        colour = .data$mutation_lineage,
-        size = .data$cluster_size + 1
-      ),
-      tooltip = sc1$mouseover,
-      data_id = sc1$node,
-      alpha = .5,
-      data = sc1
-    ) +
-    ggplot2::xlab("Lineage and/or mutation") +
-    ggplot2::ylab(varx) +
-    ggplot2::geom_hline(ggplot2::aes(yintercept = 0)) +
-    ggplot2::theme(
-      axis.text.x =  ggplot2::element_blank(),
-      axis.ticks.x = ggplot2::element_blank()
-    )
+  p1 <- create_cluster_sina_ggplot(sc1, y_lab = varx)
 
   g1 <- create_widget(
-      ggobj = p1,
-      width_svg = 8,
-      height_svg = 8
-    )
+    ggobj = p1,
+    width_svg = 8,
+    height_svg = 8
+  )
 
   htmlwidgets::saveWidget(g1,
     file = as.character(glue::glue("{output_dir}/sina-{varx}.html"))
@@ -93,4 +74,38 @@ format_cluster_sina_data <- function(pldf,
   sc1$y <- sc1[[varx]]
 
   sc1
+}
+
+#' Creates an interactive sina plot using ggplot2 and ggiraph
+#'
+#' @param   sc1   Data-frame. As created using \code{format_cluster_sina_data}.
+#' @param   x_lab,y_lab   Scalar string. Labels for the x- and y-axis.
+#'
+#' @return  an interactive ggplot2 object
+
+create_cluster_sina_ggplot <- function(sc1,
+                                       x_lab = "Lineage and/or mutation",
+                                       y_lab = "logistic_growth_rate") {
+  p1 <- ggplot2::ggplot(sc1) +
+    ggiraph::geom_point_interactive(
+      ggplot2::aes(
+        x = .data$x,
+        y = .data$y,
+        colour = .data$mutation_lineage,
+        size = .data$cluster_size + 1
+      ),
+      tooltip = sc1$mouseover,
+      data_id = sc1$node,
+      alpha = .5,
+      data = sc1
+    ) +
+    ggplot2::xlab(x_lab) +
+    ggplot2::ylab(y_lab) +
+    ggplot2::geom_hline(ggplot2::aes(yintercept = 0)) +
+    ggplot2::theme(
+      axis.text.x =  ggplot2::element_blank(),
+      axis.ticks.x = ggplot2::element_blank()
+    )
+
+  p1
 }
