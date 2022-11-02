@@ -220,60 +220,23 @@ treeview <- function(e0,
     if (is.null(colour_limits)) {
       colour_limits <- range(td[[vn]])
     }
-    gtr1 <- ggtree::ggtree(
-      dplyr::full_join(tr2,
-        td,
-        by = "node"
-      ),
-      ggplot2::aes_string(colour = vn),
-      ladderize = TRUE,
-      right = TRUE,
-      continuous = TRUE
-    )
-
     shapes <- c(
       Y = "\U2B24",
       N = "\U25C4"
     )
 
-    gtr1.1 <- gtr1 +
-      ggplot2::scale_color_gradientn(
-        name = gsub(vn, pattern = "_", replacement = " "),
-        colours = cols,
-        limits = colour_limits,
-        oob = scales::squish
-      ) +
-      ggplot2::geom_point(
-        ggplot2::aes_string(
-          color = vn,
-          size = "cluster_size",
-          shape = "as.factor(internal)"
-        ),
-        data = gtr1$data
-      ) +
-      ggplot2::scale_shape_manual(
-        name = NULL,
-        labels = NULL,
-        values = shapes
-      ) +
-      ggplot2::scale_size(
-        name = "Cluster size",
-        range = c(2, 16)
-      ) +
-      ggplot2::ggtitle(glue::glue("{Sys.Date()}, colour: {vn}")) +
-      ggplot2::theme(legend.position = "top")
+    ggtree_data <- dplyr::full_join(tr2, td, by = "node")
 
-    for (i in seq_along(lins)) {
-      if (!is.na(lin_nodes[i])) {
-        gtr1.1 <- gtr1.1 +
-          ggtree::geom_cladelabel(
-            node = lin_nodes[i],
-            label = lin_node_names[i],
-            offset = .00001,
-            colour = "black"
-          )
-      }
-    }
+    gtr1.1 <- create_noninteractive_ggtree(
+      ggtree_data = ggtree_data,
+      branch_col = vn,
+      lins = lins,
+      lin_nodes = lin_nodes,
+      lin_node_names = lin_node_names,
+      shapes = shapes,
+      colours = cols,
+      colour_limits = colour_limits
+    )
 
     ggplot2::ggsave(
       gtr1.1,
