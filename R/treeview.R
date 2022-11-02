@@ -481,16 +481,15 @@ treeview <- function(e0,
     suppressWarnings(.plot_tree(vn, mut_regex = mutations))
   }
 
-  suppressWarnings(
+  suppressWarnings({
     plot_cluster_sina(
       pldf,
       output_dir = output_dir,
       mut_regexp = mutations,
       lineage_regexp = lineages
     )
-  )
-  for (vn in setdiff(branch_cols, c("logistic_growth_rate"))) {
-    suppressWarnings(
+
+    for (vn in setdiff(branch_cols, c("logistic_growth_rate"))) {
       plot_cluster_sina(
         pldf,
         output_dir = output_dir,
@@ -498,8 +497,8 @@ treeview <- function(e0,
         mut_regexp = mutations,
         lineage_regexp = lineages
       )
-    )
-  }
+    }
+  })
 
   invisible(pl)
 }
