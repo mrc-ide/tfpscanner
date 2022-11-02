@@ -49,25 +49,12 @@ format_cluster_sina_data <- function(pldf,
   sc1$varx <- sc1[[varx]]
   sc1$colour_var <- ""
 
-  if (!is.null(mut_regexp)) {
-    y <- do.call(cbind, lapply(mut_regexp, function(xre) {
-      ifelse(grepl(sc1$allmuts, pattern = xre), xre, "")
-    }))
-    ymut <- apply(y, 1, function(x) paste(x, collapse = "."))
-  } else {
-    ymut <- rep("", nrow(sc1))
-  }
+  sc1$mutation_lineage <- get_mutation_and_lineage(
+    sc1,
+    mut_regexp = mut_regexp,
+    lineage_regexp = lineage_regexp
+  )
 
-  if (!is.null(lineage_regexp)) {
-    y <- do.call(cbind, lapply(lineage_regexp, function(xre) {
-      ifelse(grepl(sc1$lineage, pattern = xre), xre, "")
-    }))
-    ylin <- apply(y, 1, function(x) paste(x, collapse = "."))
-  } else {
-    ylin <- rep("", nrow(sc1))
-  }
-
-  sc1$mutation_lineage <- paste(ymut, ylin, sep = "_")
   fx <- as.factor(sc1$mutation_lineage)
   sc1$x <- as.numeric(fx)
   sc1$x <- stats::rnorm(nrow(sc1), sc1$x, .15) ## seed value???
@@ -108,4 +95,39 @@ create_cluster_sina_ggplot <- function(sc1,
     )
 
   p1
+}
+
+#' Returns a string vector containing mutation and lineage information
+#'
+#' The strings are "_"-separated, with mutations on the left and lineages on the right.
+#' In a given string, there is an entry for each regexp that matches.
+#' The regex matches are "."-separated (there is n-1 dots on the LHS if there are n `mut_regexps`).
+#'
+#' @inheritParams   plot_cluster_sina
+#' @param   x   A data-frame, it must contain a "allmuts" and a "lineage" column.
+#'
+#' @return   Vector of strings, one for each row of \code{x}.
+
+get_mutation_and_lineage <- function(x,
+                                     mut_regexp = NULL,
+                                     lineage_regexp = NULL) {
+  if (!is.null(mut_regexp)) {
+    y <- do.call(cbind, lapply(mut_regexp, function(xre) {
+      ifelse(grepl(x[["allmuts"]], pattern = xre), xre, "")
+    }))
+    ymut <- apply(y, 1, function(z) paste(z, collapse = "."))
+  } else {
+    ymut <- rep("", nrow(x))
+  }
+
+  if (!is.null(lineage_regexp)) {
+    y <- do.call(cbind, lapply(lineage_regexp, function(xre) {
+      ifelse(grepl(x[["lineage"]], pattern = xre), xre, "")
+    }))
+    ylin <- apply(y, 1, function(z) paste(z, collapse = "."))
+  } else {
+    ylin <- rep("", nrow(x))
+  }
+
+  paste(ymut, ylin, sep = "_")
 }
