@@ -356,15 +356,12 @@ treeview <- function(e0,
       )
     })
     gtr1.1$data$colour_var <- gtr1.1$data[[vn]]
-    gtr1.2 <- ggtree::gheatmap(
-      gtr1.1,
-      genotype,
-      width = heatmap_width,
-      offset = 0.0005,
-      colnames_angle = -90,
-      colnames_position = "top",
-      colnames_offset_y = heatmap_lab_offset,
-      legend_title = "Genotype"
+
+    gtr1.2 <- append_heatmap(
+      ggobj = gtr1.1,
+      genotype = genotype,
+      heatmap_width = heatmap_width,
+      heatmap_lab_offset = heatmap_lab_offset
     )
 
     gtr1.3 <- gtr1.2 +

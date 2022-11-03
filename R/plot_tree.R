@@ -72,6 +72,30 @@ create_noninteractive_ggtree <- function(ggtree_data,
   gtr1.1
 }
 
+#' Adds a heatmap to the right of a ggtree object
+#'
+#' @param   ggobj   A ggtree object.
+#' @param   genotype    The heatmap data.
+#' @param   heatmap_width,heatmap_lab_offset    Parameters for positioning of the heatmap.
+#'
+#' @return  A \code{ggtree} / \code{gg} / \code{ggplot} object with an appended heatmap.
+
+append_heatmap <- function(ggobj,
+                           genotype,
+                           heatmap_width = 1,
+                           heatmap_lab_offset = 0) {
+  ggtree::gheatmap(
+    p = ggobj,
+    data = genotype,
+    width = heatmap_width,
+    offset = 0.0005,
+    colnames_angle = -90,
+    colnames_position = "top",
+    colnames_offset_y = heatmap_lab_offset,
+    legend_title = "Genotype"
+  )
+}
+
 #' Sorts a vector of mutations
 #'
 #' @param   muts    String. Vector of mutations. Each string must be a separate mutation
