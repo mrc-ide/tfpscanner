@@ -1,6 +1,6 @@
-^.*\.Rproj$
-^\.Rproj\.user$
-^LICENSE\.md$
 .lintr
+^.*\.Rproj$
+^LICENSE\.md$
+^\.Rproj\.user$
 ^\.github$
 ^\.pre-commit-config\.yaml$
