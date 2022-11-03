@@ -452,19 +452,10 @@ treeview <- function(e0,
       ) +
       ggplot2::theme(legend.position = "top")
 
-    # ~ font-family: "Lucida Console", "Courier New", monospace;
-    tooltip_css <- "background-color:black;color:grey;padding:14px;border-radius:8px;font-family:\"Courier New\",monospace;" # nolint
-    pgtr1.3 <- ggiraph::girafe(
+    pgtr1.3 <- create_widget(
       ggobj = gtr1.3,
       width_svg = 15,
-      height_svg = max(14, floor(ape::Ntip(tr2) / 10)),
-      options = list(
-        ggiraph::opts_sizing(width = 0.8),
-        ggiraph::opts_tooltip(
-          css = tooltip_css,
-          use_fill = FALSE
-        )
-      )
+      height_svg = max(14, floor(ape::Ntip(tr2) / 10))
     )
 
     htmlwidgets::saveWidget(pgtr1.3,
@@ -534,18 +525,10 @@ treeview <- function(e0,
         axis.ticks.x = ggplot2::element_blank()
       )
 
-    tooltip_css <- "background-color:black;color:grey;padding:14px;border-radius:8px;font-family:\"Courier New\",monospace;" # nolint
-    g1 <- ggiraph::girafe(
+    g1 <- create_widget(
       ggobj = p1,
       width_svg = 8,
-      height_svg = 8,
-      options = list(
-        ggiraph::opts_sizing(width = 0.8),
-        ggiraph::opts_tooltip(
-          css = tooltip_css,
-          use_fill = FALSE
-        )
-      )
+      height_svg = 8
     )
 
     htmlwidgets::saveWidget(g1,
