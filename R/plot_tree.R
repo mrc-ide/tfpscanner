@@ -96,6 +96,56 @@ append_heatmap <- function(ggobj,
   )
 }
 
+#' Converts a \code{ggtree} object into a \code{ggiraph} object with interactive potential
+#'
+#' @param   ggobj   A \code{ggtree} object.
+#' @param   branch_col    Scalar string. Name of the column in \code{ggobj$data} that we are
+#'   creating the plot for.
+#' @param   cluster_size_range    Numeric (length-2). min and max values for cluster sizes on the
+#'   chart.
+#' @inheritParams   create_noninteractive_ggtree
+#'
+#' @return  A  \code{ggtree} object with interactive data for presentation by
+#'   \code{ggiraph::girafe}.
+
+create_interactive_ggtree <- function(ggobj,
+                                      branch_col,
+                                      cluster_size_range,
+                                      shapes,
+                                      colours,
+                                      colour_limits) {
+  ggobj +
+    ggiraph::geom_point_interactive(
+      ggplot2::aes(
+        x = .data$x,
+        y = .data$y,
+        color = .data$colour_var,
+        tooltip = .data$mouseover,
+        data_id = .data$node,
+        size = .data$cluster_size + 1,
+        shape = as.factor(.data$internal)
+      )
+    ) +
+    ggplot2::scale_shape_manual(
+      name = NULL,
+      labels = NULL,
+      values = shapes
+    ) +
+    ggplot2::scale_size(
+      name = "Cluster size",
+      range = cluster_size_range
+    ) +
+    ggplot2::scale_color_gradientn(
+      name = stringr::str_to_title(
+        gsub(branch_col, pattern = "_", replacement = " ")
+      ),
+      colours = colours,
+      limits = colour_limits,
+      oob = scales::squish
+    ) +
+    ggplot2::theme(legend.position = "top")
+}
+
 #' Sorts a vector of mutations
 #'
 #' @param   muts    String. Vector of mutations. Each string must be a separate mutation

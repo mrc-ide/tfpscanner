@@ -364,37 +364,14 @@ treeview <- function(e0,
       heatmap_lab_offset = heatmap_lab_offset
     )
 
-    gtr1.3 <- gtr1.2 +
-      ggiraph::geom_point_interactive(
-        ggplot2::aes(
-          x = .data$x,
-          y = .data$y,
-          color = .data$colour_var,
-          tooltip = .data$mouseover,
-          data_id = .data$node,
-          size = .data$cluster_size + 1,
-          shape = as.factor(.data$internal)
-        )
-      ) +
-      ggplot2::scale_shape_manual(
-        name = NULL,
-        labels = NULL,
-        values = shapes
-      ) +
-      ggplot2::scale_size(
-        name = "Cluster size",
-        range = c(2, 16)
-      ) +
-      ggplot2::scale_color_gradientn(
-        name = stringr::str_to_title(gsub(vn,
-          pattern = "_",
-          replacement = " "
-        )),
-        colours = cols,
-        limits = colour_limits,
-        oob = scales::squish
-      ) +
-      ggplot2::theme(legend.position = "top")
+    gtr1.3 <- create_interactive_ggtree(
+      gtr1.2,
+      branch_col = vn,
+      cluster_size_range = c(2, 16),
+      shapes = shapes,
+      colours = cols,
+      colour_limits = colour_limits
+    )
 
     pgtr1.3 <- create_widget(
       ggobj = gtr1.3,
