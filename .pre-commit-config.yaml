@@ -10,18 +10,17 @@ repos:
         # roxygen requires loading pkg -> add dependencies from DESCRIPTION
         additional_dependencies:
         -    ape
-        -    doMPI
         -    dplyr
         -    foreach
         -    ggiraph
         -    ggplot2
-        -    ggtree
+        -    bioc::ggtree
         -    glue
         -    htmlwidgets
         -    knitr
         -    lubridate
         -    mgcv
-        -    mlesky
+        -    git::git@github.com:emvolz-phylodynamics/mlesky
         -    phangorn
         -    rlang
         -    Rmpi
