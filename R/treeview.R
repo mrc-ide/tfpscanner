@@ -254,14 +254,11 @@ treeview <- function(e0,
       mut_regex = mut_regex
     )
 
-    genotype <- as.data.frame(
-      gtr1.1$data[
-        gtr1.1$data$node <= ape::Ntip(tr2),
-        c("label", mut_regex)
-      ]
+    genotype <- extract_genotype_data(
+      ggobj = gtr1.1,
+      n_leaves = ape::Ntip(tr2),
+      mut_regex = mut_regex
     )
-    rownames(genotype) <- genotype$label
-    genotype <- genotype[, -1, drop = FALSE]
 
     gtr1.2 <- append_heatmap(
       ggobj = gtr1.1,
