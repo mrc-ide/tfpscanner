@@ -214,7 +214,8 @@ treeview <- function(e0,
   }
 
   # make and save the tree view
-  .plot_tree <- function(vn,
+  .plot_tree <- function(ggtree_data,
+                         vn,
                          n_leaves,
                          mut_regex = NULL,
                          colour_limits = NULL) {
@@ -225,8 +226,6 @@ treeview <- function(e0,
       Y = "\U2B24",
       N = "\U25C4"
     )
-
-    ggtree_data <- dplyr::full_join(tr2, td, by = "node")
 
     gtr1.1 <- create_noninteractive_ggtree(
       ggtree_data = ggtree_data,
@@ -299,9 +298,11 @@ treeview <- function(e0,
 
   message("Generating figures")
 
+  ggtree_data <- dplyr::full_join(tr2, td, by = "node")
   pl <- suppressWarnings(
     .plot_tree(
-      "logistic_growth_rate",
+      ggtree_data = ggtree_data,
+      vn = "logistic_growth_rate",
       n_leaves = ape::Ntip(tr2),
       mut_regex = mutations,
       colour_limits = c(-.5, .5)
@@ -310,7 +311,8 @@ treeview <- function(e0,
   for (vn in setdiff(branch_cols, c("logistic_growth_rate"))) {
     suppressWarnings(
       .plot_tree(
-        vn,
+        ggtree_data = ggtree_data,
+        vn = vn,
         n_leaves = ape::Ntip(tr2),
         mut_regex = mutations
       )
