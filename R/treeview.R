@@ -220,6 +220,7 @@ treeview <- function(e0,
                          vn,
                          n_leaves,
                          mut_regex = NULL,
+                         colours = NULL,
                          colour_limits = NULL) {
     shapes <- c(
       Y = "\U2B24",
@@ -231,7 +232,7 @@ treeview <- function(e0,
       branch_col = vn,
       lins = lins,
       shapes = shapes,
-      colours = cols,
+      colours = colours,
       colour_limits = colour_limits
     )
 
@@ -269,7 +270,7 @@ treeview <- function(e0,
       branch_col = vn,
       cluster_size_range = c(2, 16),
       shapes = shapes,
-      colours = cols,
+      colours = colours,
       colour_limits = colour_limits
     )
 
@@ -302,6 +303,7 @@ treeview <- function(e0,
       vn = "logistic_growth_rate",
       n_leaves = ape::Ntip(tr2),
       mut_regex = mutations,
+      colours = cols,
       colour_limits = c(-.5, .5)
     )
   )
@@ -312,6 +314,7 @@ treeview <- function(e0,
         vn = vn,
         n_leaves = ape::Ntip(tr2),
         mut_regex = mutations,
+        colours = cols,
         colour_limits = range(td[[vn]])
       )
     )
