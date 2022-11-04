@@ -319,20 +319,19 @@ treeview <- function(e0,
     )
   }
 
-  pl <- suppressWarnings(
-    plot_tree_curried(
+  suppressWarnings({
+    pl <- plot_tree_curried(
       vn = "logistic_growth_rate",
       colour_limits = c(-.5, .5)
     )
-  )
-  for (vn in setdiff(branch_cols, c("logistic_growth_rate"))) {
-    suppressWarnings(
+
+    for (vn in setdiff(branch_cols, c("logistic_growth_rate"))) {
       plot_tree_curried(
         vn = vn,
         colour_limits = range(td[[vn]])
       )
-    )
-  }
+    }
+  })
 
   pldf <- pl$data
 
