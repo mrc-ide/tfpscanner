@@ -335,18 +335,10 @@ treeview <- function(e0,
       }
     }
 
-    genotype <- as.data.frame(
-      gtr1.1$data[
-        gtr1.1$data$node <= ape::Ntip(tr2),
-        c("label", mut_regex)
-      ]
-    )
-    rownames(genotype) <- genotype$label
-    genotype <- genotype[, -1, drop = FALSE]
-
     # make html widget
     gtr1.1$data$mouseover <- sapply(seq_along(ttdfs), function(i) {
-      paste0("Statistics:\n", ttdfs[i],
+      paste0(
+        "Statistics:\n", ttdfs[i],
         "\n\nGeography:\n", ttregtabs[i],
         "\n\nCo-circulating with:\n", ttcocirc[i],
         "\n\n", ttdefmuts[i],
@@ -356,6 +348,15 @@ treeview <- function(e0,
       )
     })
     gtr1.1$data$colour_var <- gtr1.1$data[[vn]]
+
+    genotype <- as.data.frame(
+      gtr1.1$data[
+        gtr1.1$data$node <= ape::Ntip(tr2),
+        c("label", mut_regex)
+      ]
+    )
+    rownames(genotype) <- genotype$label
+    genotype <- genotype[, -1, drop = FALSE]
 
     gtr1.2 <- append_heatmap(
       ggobj = gtr1.1,
@@ -394,11 +395,13 @@ treeview <- function(e0,
   }
 
   message("Generating figures")
-
-  pl <- suppressWarnings(.plot_tree("logistic_growth_rate",
-    mut_regex = mutations,
-    colour_limits = c(-.5, .5)
-  ))
+  pl <- suppressWarnings(
+    .plot_tree(
+      "logistic_growth_rate",
+      mut_regex = mutations,
+      colour_limits = c(-.5, .5)
+    )
+  )
   pldf <- pl$data
   for (vn in setdiff(branch_cols, c("logistic_growth_rate"))) {
     suppressWarnings(.plot_tree(vn, mut_regex = mutations))
