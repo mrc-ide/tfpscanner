@@ -219,9 +219,6 @@ treeview <- function(e0,
                          n_leaves,
                          mut_regex = NULL,
                          colour_limits = NULL) {
-    if (is.null(colour_limits)) {
-      colour_limits <- range(td[[vn]])
-    }
     shapes <- c(
       Y = "\U2B24",
       N = "\U25C4"
@@ -314,7 +311,8 @@ treeview <- function(e0,
         ggtree_data = ggtree_data,
         vn = vn,
         n_leaves = ape::Ntip(tr2),
-        mut_regex = mutations
+        mut_regex = mutations,
+        colour_limits = range(td[[vn]])
       )
     )
   }
