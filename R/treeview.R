@@ -177,13 +177,15 @@ treeview <- function(e0,
 
   tablin <- table(td$lineages1[!(sc0$lineage1 %in% c("None", "B.1"))])
   tablin <- tablin[order(tablin)]
-  lins <- names(tablin)
 
   # find a good internal node to represent the mrca of each lineage
-  lin_nodes <- c()
-  lin_node_names <- c()
+  lins <- list(
+    lineages = names(tablin),
+    nodes = c(),
+    node_names = c()
+  )
 
-  for (lin in lins) {
+  for (lin in lins$lineages) {
     whichrep <- stats::na.omit(sc0$representative[sc0$lineage1 == lin])
     res <- NULL
     if (length(whichrep) == 1) {
@@ -206,8 +208,8 @@ treeview <- function(e0,
       }
     }
     if (!is.null(res)) {
-      lin_nodes <- c(lin_nodes, res)
-      lin_node_names <- c(lin_node_names, lin)
+      lins$nodes <- c(lins[["nodes"]], res)
+      lins$node_names <- c(lins[["node_names"]], lin)
     }
 
     res
@@ -228,8 +230,6 @@ treeview <- function(e0,
       ggtree_data = ggtree_data,
       branch_col = vn,
       lins = lins,
-      lin_nodes = lin_nodes,
-      lin_node_names = lin_node_names,
       shapes = shapes,
       colours = cols,
       colour_limits = colour_limits

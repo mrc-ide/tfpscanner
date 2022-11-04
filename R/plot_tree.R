@@ -3,11 +3,11 @@
 #' @param   ggtree_data    Tree data for passing to \code{ggtree}.
 #' @param   branch_col    Scalar string. The name of a column within \code{ggtree_data} for which
 #'   the \code{ggtree} object should be produced.
-#' @param   lins    String. Vector of lineages that are under study.
-#' @param   lin_nodes   Integer. Vector of node numbers. The nodes are defined in
-#'   \code{ggtree_data$node}. The order of entries matches that for \code{lins}.
-#' @param   lin_node_names    String. Name of the lineage. The order of entries matches that for
-#'   \code{lins}.
+#' @param   lins    List. Defines the virus lineages that are under study. Three entries are
+#'   present. \code{lins$lineages} a string vector of the lineages. \code{lins$nodes} an integer
+#'   vector of node numbers, these correspond to nodes in \code{ggtree_data$node}.
+#'   \code{lins$node_names} a string vector giving the name of the lineage. For \code{nodes} and
+#'   \code{node_names} the order of entries matches that for \code{lins}.
 #' @param   shapes    Shapes for the branches and leaves in the tree.
 #' @param   colours    Vector of colours.
 #' @param   colour_limits   Min and max values for the colours.
@@ -17,8 +17,6 @@
 create_noninteractive_ggtree <- function(ggtree_data,
                                          branch_col,
                                          lins,
-                                         lin_nodes,
-                                         lin_node_names,
                                          shapes,
                                          colours,
                                          colour_limits) {
@@ -57,12 +55,12 @@ create_noninteractive_ggtree <- function(ggtree_data,
     ggplot2::ggtitle(glue::glue("{Sys.Date()}, colour: {branch_col}")) +
     ggplot2::theme(legend.position = "top")
 
-  for (i in seq_along(lins)) {
-    if (!is.na(lin_nodes[i])) {
+  for (i in seq_along(lins[["lineages"]])) {
+    if (!is.na(lins[["nodes"]][i])) {
       gtr1.1 <- gtr1.1 +
         ggtree::geom_cladelabel(
-          node = lin_nodes[i],
-          label = lin_node_names[i],
+          node = lins[["nodes"]][i],
+          label = lins[["node_names"]][i],
           offset = .00001,
           colour = "black"
         )

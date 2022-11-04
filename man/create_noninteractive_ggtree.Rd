@@ -8,8 +8,6 @@ create_noninteractive_ggtree(
   ggtree_data,
   branch_col,
   lins,
-  lin_nodes,
-  lin_node_names,
   shapes,
   colours,
   colour_limits
@@ -21,13 +19,11 @@ create_noninteractive_ggtree(
 \item{branch_col}{Scalar string. The name of a column within \code{ggtree_data} for which
 the \code{ggtree} object should be produced.}
 
-\item{lins}{String. Vector of lineages that are under study.}
-
-\item{lin_nodes}{Integer. Vector of node numbers. The nodes are defined in
-\code{ggtree_data$node}. The order of entries matches that for \code{lins}.}
-
-\item{lin_node_names}{String. Name of the lineage. The order of entries matches that for
-\code{lins}.}
+\item{lins}{List. Defines the virus lineages that are under study. Three entries are
+present. \code{lins$lineages} a string vector of the lineages. \code{lins$nodes} an integer
+vector of node numbers, these correspond to nodes in \code{ggtree_data$node}.
+\code{lins$node_names} a string vector giving the name of the lineage. For \code{nodes} and
+\code{node_names} the order of entries matches that for \code{lins}.}
 
 \item{shapes}{Shapes for the branches and leaves in the tree.}
 
