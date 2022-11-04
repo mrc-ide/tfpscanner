@@ -297,24 +297,26 @@ treeview <- function(e0,
   message("Generating figures")
 
   ggtree_data <- dplyr::full_join(tr2, td, by = "node")
-  pl <- suppressWarnings(
+  plot_tree_curried <- function(...) {
     .plot_tree(
+      ...,
       ggtree_data = ggtree_data,
-      vn = "logistic_growth_rate",
       n_leaves = ape::Ntip(tr2),
       mut_regex = mutations,
-      colours = cols,
+      colours = cols
+    )
+  }
+
+  pl <- suppressWarnings(
+    plot_tree_curried(
+      vn = "logistic_growth_rate",
       colour_limits = c(-.5, .5)
     )
   )
   for (vn in setdiff(branch_cols, c("logistic_growth_rate"))) {
     suppressWarnings(
-      .plot_tree(
-        ggtree_data = ggtree_data,
+      plot_tree_curried(
         vn = vn,
-        n_leaves = ape::Ntip(tr2),
-        mut_regex = mutations,
-        colours = cols,
         colour_limits = range(td[[vn]])
       )
     )
