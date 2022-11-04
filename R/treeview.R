@@ -215,6 +215,7 @@ treeview <- function(e0,
 
   # make and save the tree view
   .plot_tree <- function(vn,
+                         n_leaves,
                          mut_regex = NULL,
                          colour_limits = NULL) {
     if (is.null(colour_limits)) {
@@ -241,7 +242,7 @@ treeview <- function(e0,
     ggplot2::ggsave(
       gtr1.1,
       filename = glue::glue("{output_dir}/tree-{vn}-{Sys.Date()}.svg"),
-      height = max(14, floor(ape::Ntip(tr2) / 10)),
+      height = max(14, floor(n_leaves / 10)),
       width = 16,
       limitsize = FALSE
     )
@@ -256,7 +257,7 @@ treeview <- function(e0,
 
     genotype <- extract_genotype_data(
       ggobj = gtr1.1,
-      n_leaves = ape::Ntip(tr2),
+      n_leaves = n_leaves,
       mut_regex = mut_regex
     )
 
@@ -279,7 +280,7 @@ treeview <- function(e0,
     pgtr1.3 <- create_widget(
       ggobj = gtr1.3,
       width_svg = 15,
-      height_svg = max(14, floor(ape::Ntip(tr2) / 10))
+      height_svg = max(14, floor(n_leaves / 10))
     )
 
     htmlwidgets::saveWidget(
@@ -297,17 +298,26 @@ treeview <- function(e0,
   }
 
   message("Generating figures")
+
   pl <- suppressWarnings(
     .plot_tree(
       "logistic_growth_rate",
+      n_leaves = ape::Ntip(tr2),
       mut_regex = mutations,
       colour_limits = c(-.5, .5)
     )
   )
-  pldf <- pl$data
   for (vn in setdiff(branch_cols, c("logistic_growth_rate"))) {
-    suppressWarnings(.plot_tree(vn, mut_regex = mutations))
+    suppressWarnings(
+      .plot_tree(
+        vn,
+        n_leaves = ape::Ntip(tr2),
+        mut_regex = mutations
+      )
+    )
   }
+
+  pldf <- pl$data
 
   suppressWarnings({
     plot_cluster_sina(
