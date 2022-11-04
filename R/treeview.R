@@ -219,6 +219,12 @@ treeview <- function(e0,
   .plot_tree <- function(ggtree_data,
                          vn,
                          n_leaves,
+                         lins,
+                         sc0,
+                         cmuts,
+                         output_dir,
+                         heatmap_width,
+                         heatmap_lab_offset,
                          mut_regex = NULL,
                          colours = NULL,
                          colour_limits = NULL) {
@@ -302,8 +308,14 @@ treeview <- function(e0,
       ...,
       ggtree_data = ggtree_data,
       n_leaves = ape::Ntip(tr2),
+      lins = lins,
+      sc0 = sc0,
+      cmuts = cmuts,
+      output_dir = output_dir,
       mut_regex = mutations,
-      colours = cols
+      colours = cols,
+      heatmap_width = heatmap_width,
+      heatmap_lab_offset = heatmap_lab_offset
     )
   }
 
