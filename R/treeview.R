@@ -300,7 +300,6 @@ treeview <- function(e0,
             round(lgr * 100), "%"
           ),
           `Mol clock outlier` = clock_outlier,
-          # `Structure Z` = treestructure_z,
           `Lineages` = lineages
         )
       )
@@ -384,19 +383,18 @@ treeview <- function(e0,
     gtr1.1$data$defmuts <- ttdefmuts
     gtr1.1$data$allmuts <- ttallmuts
     if (!is.null(mut_regex)) {
-      # gtr1.1$data$label <- ''
       for (mre in mut_regex) {
         i <- which(grepl(gtr1.1$data$allmuts, pattern = mre))
-        # gtr1.1$data$label[i] <- '*'
         gtr1.1$data[[mre]] <- grepl(gtr1.1$data$allmuts, pattern = mre)
       }
-      # gtr1.1 <- gtr1.1 + geom_tiplab( size = 16, colour = 'red' )
     }
 
-    genotype <- as.data.frame(gtr1.1$data[
-      gtr1.1$data$node <= ape::Ntip(tr2),
-      c("label", mut_regex)
-    ])
+    genotype <- as.data.frame(
+      gtr1.1$data[
+        gtr1.1$data$node <= ape::Ntip(tr2),
+        c("label", mut_regex)
+      ]
+    )
     rownames(genotype) <- genotype$label
     genotype <- genotype[, -1, drop = FALSE]
 
@@ -412,7 +410,8 @@ treeview <- function(e0,
       )
     })
     gtr1.1$data$colour_var <- gtr1.1$data[[vn]]
-    gtr1.2 <- ggtree::gheatmap(gtr1.1,
+    gtr1.2 <- ggtree::gheatmap(
+      gtr1.1,
       genotype,
       width = heatmap_width,
       offset = 0.0005,
@@ -423,15 +422,17 @@ treeview <- function(e0,
     )
 
     gtr1.3 <- gtr1.2 +
-      ggiraph::geom_point_interactive(ggplot2::aes(
-        x = .data$x,
-        y = .data$y,
-        color = .data$colour_var,
-        tooltip = .data$mouseover,
-        data_id = .data$node,
-        size = .data$cluster_size + 1,
-        shape = as.factor(.data$internal)
-      )) +
+      ggiraph::geom_point_interactive(
+        ggplot2::aes(
+          x = .data$x,
+          y = .data$y,
+          color = .data$colour_var,
+          tooltip = .data$mouseover,
+          data_id = .data$node,
+          size = .data$cluster_size + 1,
+          shape = as.factor(.data$internal)
+        )
+      ) +
       ggplot2::scale_shape_manual(
         name = NULL,
         labels = NULL,
@@ -458,11 +459,13 @@ treeview <- function(e0,
       height_svg = max(14, floor(ape::Ntip(tr2) / 10))
     )
 
-    htmlwidgets::saveWidget(pgtr1.3,
+    htmlwidgets::saveWidget(
+      pgtr1.3,
       file = as.character(glue::glue("{output_dir}/tree-{vn}.html")),
       title = glue::glue("SARS CoV 2 scan {Sys.Date()}")
     )
-    file.copy(as.character(glue::glue("{output_dir}/tree-{vn}.html")),
+    file.copy(
+      as.character(glue::glue("{output_dir}/tree-{vn}.html")),
       as.character(glue::glue("{output_dir}/tree-{vn}-{Sys.Date()}.html")),
       overwrite = TRUE
     )
