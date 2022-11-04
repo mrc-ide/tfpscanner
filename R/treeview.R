@@ -246,108 +246,13 @@ treeview <- function(e0,
       limitsize = FALSE
     )
 
-    # make mouseover info
-    ## standard meta data
-    ttdfs <- apply(gtr1.1$data, 1, FUN = function(x) {
-      z <- as.list(x)
-      lgr <- as.numeric(z$logistic_growth_rate)
-      y <- with(
-        z,
-        data.frame(
-          `Cluster ID` = glue::glue("#{cluster_id}"),
-          `Cluster size` = cluster_size,
-          `Date range` = date_range,
-          `Example sequence` = label,
-          `Logistic growth` = paste0(
-            ifelse(lgr > 0, "+", ""),
-            round(lgr * 100), "%"
-          ),
-          `Mol clock outlier` = clock_outlier,
-          `Lineages` = lineages
-        )
-      )
-      y <- t(y)
-      colnames(y) <- ""
-      tryCatch(paste(knitr::kable(y, "simple"), collapse = "\n"),
-        error = function(e) paste(knitr::kable(y, "markdown"), collapse = "\n")
-      )
-    })
-
-    ## table with geo composition
-    ttregtabs <- gtr1.1$data$region_summary #
-    ## cocirc
-    ttcocirc <- gtr1.1$data$cocirc_summary #
-
-    ## defining muts
-    ttdefmuts <- sapply(match(gtr1.1$data$cluster_id, sc0$cluster_id), function(isc0) {
-      if (is.na(isc0)) {
-        return("")
-      }
-      paste(
-        sep = "\n",
-        "Cluster branch mutations:",
-        gsub(
-          x = tryCatch(
-            stringr::str_wrap(
-              paste(
-                collapse = " ",
-                sort_mutations(cmuts[[as.character(sc0$node_number[isc0])]]$defining)
-              ),
-              width = 60
-            ),
-            error = function(e) browser()
-          ),
-          pattern = " ",
-          replacement = ", "
-        ),
-        "\n"
-      )
-    }) # end of sapply
-
-    ttallmuts <- sapply(match(gtr1.1$data$cluster_id, sc0$cluster_id), function(isc0) {
-      if (is.na(isc0)) {
-        return("")
-      }
-      paste(
-        sep = "\n",
-        "All mutations:",
-        gsub(
-          x = stringr::str_wrap(
-            paste(
-              collapse = " ",
-              sort_mutations(cmuts[[as.character(sc0$node_number[isc0])]]$all)
-            ),
-            width = 60
-          ),
-          pattern = " ",
-          replacement = ", "
-        ),
-        "\n"
-      )
-    }) # end of sapply
-
-    gtr1.1$data$defmuts <- ttdefmuts
-    gtr1.1$data$allmuts <- ttallmuts
-    if (!is.null(mut_regex)) {
-      for (mre in mut_regex) {
-        i <- which(grepl(gtr1.1$data$allmuts, pattern = mre))
-        gtr1.1$data[[mre]] <- grepl(gtr1.1$data$allmuts, pattern = mre)
-      }
-    }
-
-    # make html widget
-    gtr1.1$data$mouseover <- sapply(seq_along(ttdfs), function(i) {
-      paste0(
-        "Statistics:\n", ttdfs[i],
-        "\n\nGeography:\n", ttregtabs[i],
-        "\n\nCo-circulating with:\n", ttcocirc[i],
-        "\n\n", ttdefmuts[i],
-        "\n", ttallmuts[i],
-        "\n",
-        collapse = "\n"
-      )
-    })
-    gtr1.1$data$colour_var <- gtr1.1$data[[vn]]
+    gtr1.1 <- append_interactivity_data(
+      gtr1.1,
+      branch_col = vn,
+      sc0 = sc0,
+      cmuts = cmuts,
+      mut_regex = mut_regex
+    )
 
     genotype <- as.data.frame(
       gtr1.1$data[

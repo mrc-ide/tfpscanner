@@ -72,6 +72,131 @@ create_noninteractive_ggtree <- function(ggtree_data,
   gtr1.1
 }
 
+#' Adds data to a ggtree object to allow mouse-over tooltips etc when presented interactively
+#'
+#' @param   ggobj   A \code{ggtree} object.
+#' @param   branch_col    Scalar string. The name of a column within \code{ggobj$data} defining the
+#'   statistic under study here (`logistic_growth_rate`, `clock_outlier`).
+#' @param   sc0,cmuts   Data-frames.
+#' @param   mut_regex   Regular expression. Defines the mutations under study here.
+#'
+#' @return  A ggtree object. The \code{$data} entry has additional entries (\code{mouseover},
+#'   \code{colour_var}, \code{defmuts}, \code{allmuts}) that are used when presented interactively
+#'   by \code{ggiraph}.
+
+append_interactivity_data <- function(ggobj,
+                                      branch_col,
+                                      sc0,
+                                      cmuts,
+                                      mut_regex) {
+  # make mouseover info
+  ## standard meta data
+  ttdfs <- apply(ggobj$data, 1, FUN = function(x) {
+    z <- as.list(x)
+    lgr <- as.numeric(z$logistic_growth_rate)
+    # TODO: replace with() with explicit z$cluster_id etc
+    y <- with(
+      z,
+      data.frame(
+        `Cluster ID` = glue::glue("#{cluster_id}"),
+        `Cluster size` = cluster_size,
+        `Date range` = date_range,
+        `Example sequence` = label,
+        `Logistic growth` = paste0(
+          ifelse(lgr > 0, "+", ""),
+          round(lgr * 100), "%"
+        ),
+        `Mol clock outlier` = clock_outlier,
+        `Lineages` = lineages
+      )
+    )
+    y <- t(y)
+    colnames(y) <- ""
+    tryCatch(
+      paste(knitr::kable(y, "simple"), collapse = "\n"),
+      error = function(e) paste(knitr::kable(y, "markdown"), collapse = "\n")
+    )
+  })
+
+  ## table with geo composition
+  ttregtabs <- ggobj$data$region_summary #
+  ## cocirc
+  ttcocirc <- ggobj$data$cocirc_summary #
+
+  ## defining muts
+  ttdefmuts <- sapply(match(ggobj$data$cluster_id, sc0$cluster_id), function(isc0) {
+    if (is.na(isc0)) {
+      return("")
+    }
+    paste(
+      sep = "\n",
+      "Cluster branch mutations:",
+      gsub(
+        x = tryCatch(
+          stringr::str_wrap(
+            paste(
+              collapse = " ",
+              sort_mutations(cmuts[[as.character(sc0$node_number[isc0])]]$defining)
+            ),
+            width = 60
+          ),
+          error = function(e) browser()
+        ),
+        pattern = " ",
+        replacement = ", "
+      ),
+      "\n"
+    )
+  }) # end of sapply
+
+  ttallmuts <- sapply(match(ggobj$data$cluster_id, sc0$cluster_id), function(isc0) {
+    if (is.na(isc0)) {
+      return("")
+    }
+    paste(
+      sep = "\n",
+      "All mutations:",
+      gsub(
+        x = stringr::str_wrap(
+          paste(
+            collapse = " ",
+            sort_mutations(cmuts[[as.character(sc0$node_number[isc0])]]$all)
+          ),
+          width = 60
+        ),
+        pattern = " ",
+        replacement = ", "
+      ),
+      "\n"
+    )
+  }) # end of sapply
+
+  ggobj$data$defmuts <- ttdefmuts
+  ggobj$data$allmuts <- ttallmuts
+  if (!is.null(mut_regex)) {
+    for (mre in mut_regex) {
+      i <- which(grepl(ggobj$data$allmuts, pattern = mre))
+      ggobj$data[[mre]] <- grepl(ggobj$data$allmuts, pattern = mre)
+    }
+  }
+
+  # make html widget
+  ggobj$data$mouseover <- sapply(seq_along(ttdfs), function(i) {
+    paste0(
+      "Statistics:\n", ttdfs[i],
+      "\n\nGeography:\n", ttregtabs[i],
+      "\n\nCo-circulating with:\n", ttcocirc[i],
+      "\n\n", ttdefmuts[i],
+      "\n", ttallmuts[i],
+      "\n",
+      collapse = "\n"
+    )
+  })
+  ggobj$data$colour_var <- ggobj$data[[branch_col]]
+
+  ggobj
+}
+
 #' Adds a heatmap to the right of a ggtree object
 #'
 #' @param   ggobj   A ggtree object.
