@@ -215,103 +215,124 @@ treeview <- function(e0,
     res
   }
 
-  # make and save the tree view
-  .plot_tree <- function(ggtree_data,
-                         vn,
-                         n_leaves,
-                         lins,
-                         sc0,
-                         cmuts,
-                         output_dir,
-                         heatmap_width,
-                         heatmap_lab_offset,
-                         mut_regex = NULL,
-                         colours = NULL,
-                         colour_limits = NULL) {
+  # make the tree views
+  .create_trees <- function(ggtree_data,
+                            branch_col,
+                            n_leaves,
+                            lins,
+                            sc0,
+                            cmuts,
+                            heatmap_width,
+                            heatmap_lab_offset,
+                            mut_regex = NULL,
+                            colours = NULL,
+                            colour_limits = NULL) {
     shapes <- c(
       Y = "\U2B24",
       N = "\U25C4"
     )
 
-    gtr1.1 <- create_noninteractive_ggtree(
+    tree_list <- list()
+
+    tree_list$noninteractive <- create_noninteractive_ggtree(
       ggtree_data = ggtree_data,
-      branch_col = vn,
+      branch_col = branch_col,
       lins = lins,
       shapes = shapes,
       colours = colours,
       colour_limits = colour_limits
     )
 
-    ggplot2::ggsave(
-      gtr1.1,
-      filename = glue::glue("{output_dir}/tree-{vn}-{Sys.Date()}.svg"),
-      height = max(14, floor(n_leaves / 10)),
-      width = 16,
-      limitsize = FALSE
-    )
-
-    gtr1.1 <- append_interactivity_data(
-      gtr1.1,
-      branch_col = vn,
+    tree_list$with_interactivity_data <- append_interactivity_data(
+      tree_list[["noninteractive"]],
+      branch_col = branch_col,
       sc0 = sc0,
       cmuts = cmuts,
       mut_regex = mut_regex
     )
 
     genotype <- extract_genotype_data(
-      ggobj = gtr1.1,
+      ggobj = tree_list[["with_interactivity_data"]],
       n_leaves = n_leaves,
       mut_regex = mut_regex
     )
 
-    gtr1.2 <- append_heatmap(
-      ggobj = gtr1.1,
+    tree_list$with_heatmap <- append_heatmap(
+      ggobj = tree_list[["with_interactivity_data"]],
       genotype = genotype,
       heatmap_width = heatmap_width,
       heatmap_lab_offset = heatmap_lab_offset
     )
 
-    gtr1.3 <- create_interactive_ggtree(
-      gtr1.2,
-      branch_col = vn,
+    tree_list$interactive <- create_interactive_ggtree(
+      tree_list[["with_heatmap"]],
+      branch_col = branch_col,
       cluster_size_range = c(2, 16),
       shapes = shapes,
       colours = colours,
       colour_limits = colour_limits
     )
 
-    pgtr1.3 <- create_widget(
-      ggobj = gtr1.3,
+    tree_list$widget <- create_widget(
+      ggobj = tree_list[["interactive"]],
       width_svg = 15,
       height_svg = max(14, floor(n_leaves / 10))
     )
 
+    tree_list
+  }
+
+  # save the tree views
+  .save_trees <- function(tree_list,
+                          branch_col,
+                          n_leaves,
+                          output_dir) {
+    files <- file.path(
+      output_dir,
+      c(
+        noninteractive = glue::glue("tree-{branch_col}-{Sys.Date()}.svg"),
+        glue::glue("tree-{branch_col}.html"),
+        glue::glue("tree-{branch_col}-{Sys.Date()}.html")
+      )
+    )
+    names(files) <- c(
+      "noninteractive",
+      "widget",
+      "widget_with_date"
+    )
+
+    ggplot2::ggsave(
+      tree_list[["noninteractive"]],
+      filename = files[["noninteractive"]],
+      height = max(14, floor(n_leaves / 10)),
+      width = 16,
+      limitsize = FALSE
+    )
     htmlwidgets::saveWidget(
-      pgtr1.3,
-      file = as.character(glue::glue("{output_dir}/tree-{vn}.html")),
+      tree_list[["widget"]],
+      file = files[["widget"]],
       title = glue::glue("SARS CoV 2 scan {Sys.Date()}")
     )
     file.copy(
-      as.character(glue::glue("{output_dir}/tree-{vn}.html")),
-      as.character(glue::glue("{output_dir}/tree-{vn}-{Sys.Date()}.html")),
+      files[["widget"]],
+      files[["widget_with_date"]],
       overwrite = TRUE
     )
-
-    gtr1.1
   }
 
   message("Generating figures")
 
   ggtree_data <- dplyr::full_join(tr2, td, by = "node")
-  plot_tree_curried <- function(...) {
-    .plot_tree(
+  n_leaves <- ape::Ntip(tr2)
+
+  create_trees_curried <- function(...) {
+    .create_trees(
       ...,
       ggtree_data = ggtree_data,
-      n_leaves = ape::Ntip(tr2),
+      n_leaves = n_leaves,
       lins = lins,
       sc0 = sc0,
       cmuts = cmuts,
-      output_dir = output_dir,
       mut_regex = mutations,
       colours = cols,
       heatmap_width = heatmap_width,
@@ -320,20 +341,33 @@ treeview <- function(e0,
   }
 
   suppressWarnings({
-    pl <- plot_tree_curried(
-      vn = "logistic_growth_rate",
+    lgr_trees <- create_trees_curried(
+      branch_col = "logistic_growth_rate",
       colour_limits = c(-.5, .5)
     )
+    .save_trees(
+      lgr_trees,
+      branch_col = "logistic_growth_rate",
+      n_leaves = n_leaves,
+      output_dir = output_dir
+    )
 
-    for (vn in setdiff(branch_cols, c("logistic_growth_rate"))) {
-      plot_tree_curried(
-        vn = vn,
-        colour_limits = range(td[[vn]])
+    for (branch_col in setdiff(branch_cols, c("logistic_growth_rate"))) {
+      tree_list <- create_trees_curried(
+        branch_col = branch_col,
+        colour_limits = range(td[[branch_col]])
+      )
+      .save_trees(
+        tree_list,
+        branch_col = branch_col,
+        n_leaves = n_leaves,
+        output_dir = output_dir
       )
     }
   })
 
-  pldf <- pl$data
+  pl <- lgr_trees[["with_interactivity_data"]]
+  pldf <- pl[["data"]]
 
   suppressWarnings({
     plot_cluster_sina(
