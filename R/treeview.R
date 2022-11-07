@@ -282,44 +282,6 @@ treeview <- function(e0,
     tree_list
   }
 
-  # save the tree views
-  .save_trees <- function(tree_list,
-                          branch_col,
-                          n_leaves,
-                          output_dir) {
-    files <- file.path(
-      output_dir,
-      c(
-        noninteractive = glue::glue("tree-{branch_col}-{Sys.Date()}.svg"),
-        glue::glue("tree-{branch_col}.html"),
-        glue::glue("tree-{branch_col}-{Sys.Date()}.html")
-      )
-    )
-    names(files) <- c(
-      "noninteractive",
-      "widget",
-      "widget_with_date"
-    )
-
-    ggplot2::ggsave(
-      tree_list[["noninteractive"]],
-      filename = files[["noninteractive"]],
-      height = max(14, floor(n_leaves / 10)),
-      width = 16,
-      limitsize = FALSE
-    )
-    htmlwidgets::saveWidget(
-      tree_list[["widget"]],
-      file = files[["widget"]],
-      title = glue::glue("SARS CoV 2 scan {Sys.Date()}")
-    )
-    file.copy(
-      files[["widget"]],
-      files[["widget_with_date"]],
-      overwrite = TRUE
-    )
-  }
-
   message("Generating figures")
 
   ggtree_data <- dplyr::full_join(tr2, td, by = "node")
@@ -345,7 +307,7 @@ treeview <- function(e0,
       branch_col = "logistic_growth_rate",
       colour_limits = c(-.5, .5)
     )
-    .save_trees(
+    save_trees(
       lgr_trees,
       branch_col = "logistic_growth_rate",
       n_leaves = n_leaves,
@@ -357,7 +319,7 @@ treeview <- function(e0,
         branch_col = branch_col,
         colour_limits = range(td[[branch_col]])
       )
-      .save_trees(
+      save_trees(
         tree_list,
         branch_col = branch_col,
         n_leaves = n_leaves,
