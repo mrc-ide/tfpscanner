@@ -215,80 +215,13 @@ treeview <- function(e0,
     res
   }
 
-  # make the tree views
-  .create_trees <- function(ggtree_data,
-                            branch_col,
-                            n_leaves,
-                            lins,
-                            sc0,
-                            cmuts,
-                            heatmap_width,
-                            heatmap_lab_offset,
-                            mut_regex = NULL,
-                            colours = NULL,
-                            colour_limits = NULL) {
-    shapes <- c(
-      Y = "\U2B24",
-      N = "\U25C4"
-    )
-
-    tree_list <- list()
-
-    tree_list$noninteractive <- create_noninteractive_ggtree(
-      ggtree_data = ggtree_data,
-      branch_col = branch_col,
-      lins = lins,
-      shapes = shapes,
-      colours = colours,
-      colour_limits = colour_limits
-    )
-
-    tree_list$with_interactivity_data <- append_interactivity_data(
-      tree_list[["noninteractive"]],
-      branch_col = branch_col,
-      sc0 = sc0,
-      cmuts = cmuts,
-      mut_regex = mut_regex
-    )
-
-    genotype <- extract_genotype_data(
-      ggobj = tree_list[["with_interactivity_data"]],
-      n_leaves = n_leaves,
-      mut_regex = mut_regex
-    )
-
-    tree_list$with_heatmap <- append_heatmap(
-      ggobj = tree_list[["with_interactivity_data"]],
-      genotype = genotype,
-      heatmap_width = heatmap_width,
-      heatmap_lab_offset = heatmap_lab_offset
-    )
-
-    tree_list$interactive <- create_interactive_ggtree(
-      tree_list[["with_heatmap"]],
-      branch_col = branch_col,
-      cluster_size_range = c(2, 16),
-      shapes = shapes,
-      colours = colours,
-      colour_limits = colour_limits
-    )
-
-    tree_list$widget <- create_widget(
-      ggobj = tree_list[["interactive"]],
-      width_svg = 15,
-      height_svg = max(14, floor(n_leaves / 10))
-    )
-
-    tree_list
-  }
-
   message("Generating figures")
 
   ggtree_data <- dplyr::full_join(tr2, td, by = "node")
   n_leaves <- ape::Ntip(tr2)
 
   create_trees_curried <- function(...) {
-    .create_trees(
+    create_trees(
       ...,
       ggtree_data = ggtree_data,
       n_leaves = n_leaves,
