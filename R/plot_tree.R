@@ -85,6 +85,7 @@ create_trees <- function(ggtree_data,
 #' @param   branch_col   Scalar string. The name of the statistic that is under study here (e.g.,
 #'   "logistic_growth_rate" or "clock_outlier"). This name will be used in the output file paths.
 #' @param   output_dir   Scalar string. The directory where the plots will be saved.
+#' @param   include_date   Boolean. Should the file-paths include the current date?
 #' @inheritParams   create_trees
 #'
 #' @return   A named vector containing the file paths that were generated.
@@ -92,8 +93,14 @@ create_trees <- function(ggtree_data,
 save_trees <- function(tree_list,
                        branch_col,
                        n_leaves,
-                       output_dir) {
-  basename_prefix <- glue::glue("tree-{branch_col}-{Sys.Date()}")
+                       output_dir,
+                       include_date = FALSE) {
+  basename_prefix <- if (include_date) {
+    glue::glue("tree-{branch_col}-{Sys.Date()}")
+  } else {
+    glue::glue("tree-{branch_col}")
+  }
+
   basenames <- c(
     noninteractive = glue::glue("{basename_prefix}.svg"),
     interactive = glue::glue("{basename_prefix}.rds")
