@@ -100,19 +100,14 @@ save_trees <- function(tree_list,
                        branch_col,
                        n_leaves,
                        output_dir) {
-  files <- file.path(
-    output_dir,
-    c(
-      noninteractive = glue::glue("tree-{branch_col}-{Sys.Date()}.svg"),
-      glue::glue("tree-{branch_col}.html"),
-      glue::glue("tree-{branch_col}-{Sys.Date()}.html")
-    )
+  basename_prefix <- glue::glue("tree-{branch_col}")
+  basenames <- c(
+    noninteractive = glue::glue("{basename_prefix}-{Sys.Date()}.svg"),
+    widget = glue::glue("{basename_prefix}.html"),
+    widget_with_date = glue::glue("{basename_prefix}-{Sys.Date()}.html")
   )
-  names(files) <- c(
-    "noninteractive",
-    "widget",
-    "widget_with_date"
-  )
+  files <- file.path(output_dir, basenames)
+  names(files) <- names(basenames)
 
   ggplot2::ggsave(
     tree_list[["noninteractive"]],
