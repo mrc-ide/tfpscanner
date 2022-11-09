@@ -1,3 +1,8 @@
+# tfpscanner 0.1.5 _2022-11-07_
+
+- Separate the function for plotting `sina` cluster data from the `treeview` function
+
+
 # tfpscanner 0.1.4 _2022-11-07_
 
 - Add `testthat` and `pre-commit` infrastructure
