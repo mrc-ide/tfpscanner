@@ -31,7 +31,8 @@ Imports:
   utils
 Suggests: 
     doMPI,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    withr
 Remotes: 
   emvolz-phylodynamics/mlesky
 SystemRequirements: libopenmpi-dev
