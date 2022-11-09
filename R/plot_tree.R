@@ -94,7 +94,7 @@ create_trees <- function(ggtree_data,
 #' @param   output_dir   Scalar string. The directory where the plots will be saved.
 #' @inheritParams   create_trees
 #'
-#' @return   NULL
+#' @return   A named vector containing the file paths that were generated.
 
 save_trees <- function(tree_list,
                        branch_col,
@@ -126,6 +126,8 @@ save_trees <- function(tree_list,
     files[["widget_with_date"]],
     overwrite = TRUE
   )
+
+  invisible(files)
 }
 
 #' Create a non-interactive \code{ggtree} object for presenting mutation and lineage data
