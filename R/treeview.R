@@ -177,13 +177,15 @@ treeview <- function(e0,
 
   tablin <- table(td$lineages1[!(sc0$lineage1 %in% c("None", "B.1"))])
   tablin <- tablin[order(tablin)]
-  lins <- names(tablin)
 
   # find a good internal node to represent the mrca of each lineage
-  lin_nodes <- c()
-  lin_node_names <- c()
+  lins <- list(
+    lineages = names(tablin),
+    nodes = c(),
+    node_names = c()
+  )
 
-  for (lin in lins) {
+  for (lin in lins$lineages) {
     whichrep <- stats::na.omit(sc0$representative[sc0$lineage1 == lin])
     res <- NULL
     if (length(whichrep) == 1) {
@@ -206,108 +208,61 @@ treeview <- function(e0,
       }
     }
     if (!is.null(res)) {
-      lin_nodes <- c(lin_nodes, res)
-      lin_node_names <- c(lin_node_names, lin)
+      lins$nodes <- c(lins[["nodes"]], res)
+      lins$node_names <- c(lins[["node_names"]], lin)
     }
 
     res
   }
 
-  # make and save the tree view
-  .plot_tree <- function(vn,
-                         mut_regex = NULL,
-                         colour_limits = NULL) {
-    if (is.null(colour_limits)) {
-      colour_limits <- range(td[[vn]])
-    }
-    shapes <- c(
-      Y = "\U2B24",
-      N = "\U25C4"
-    )
+  message("Generating figures")
 
-    ggtree_data <- dplyr::full_join(tr2, td, by = "node")
+  ggtree_data <- dplyr::full_join(tr2, td, by = "node")
+  n_leaves <- ape::Ntip(tr2)
 
-    gtr1.1 <- create_noninteractive_ggtree(
+  create_trees_curried <- function(...) {
+    create_trees(
+      ...,
       ggtree_data = ggtree_data,
-      branch_col = vn,
+      n_leaves = n_leaves,
       lins = lins,
-      lin_nodes = lin_nodes,
-      lin_node_names = lin_node_names,
-      shapes = shapes,
-      colours = cols,
-      colour_limits = colour_limits
-    )
-
-    ggplot2::ggsave(
-      gtr1.1,
-      filename = glue::glue("{output_dir}/tree-{vn}-{Sys.Date()}.svg"),
-      height = max(14, floor(ape::Ntip(tr2) / 10)),
-      width = 16,
-      limitsize = FALSE
-    )
-
-    gtr1.1 <- append_interactivity_data(
-      gtr1.1,
-      branch_col = vn,
       sc0 = sc0,
       cmuts = cmuts,
-      mut_regex = mut_regex
-    )
-
-    genotype <- extract_genotype_data(
-      ggobj = gtr1.1,
-      n_leaves = ape::Ntip(tr2),
-      mut_regex = mut_regex
-    )
-
-    gtr1.2 <- append_heatmap(
-      ggobj = gtr1.1,
-      genotype = genotype,
+      mut_regex = mutations,
+      colours = cols,
       heatmap_width = heatmap_width,
       heatmap_lab_offset = heatmap_lab_offset
     )
-
-    gtr1.3 <- create_interactive_ggtree(
-      gtr1.2,
-      branch_col = vn,
-      cluster_size_range = c(2, 16),
-      shapes = shapes,
-      colours = cols,
-      colour_limits = colour_limits
-    )
-
-    pgtr1.3 <- create_widget(
-      ggobj = gtr1.3,
-      width_svg = 15,
-      height_svg = max(14, floor(ape::Ntip(tr2) / 10))
-    )
-
-    htmlwidgets::saveWidget(
-      pgtr1.3,
-      file = as.character(glue::glue("{output_dir}/tree-{vn}.html")),
-      title = glue::glue("SARS CoV 2 scan {Sys.Date()}")
-    )
-    file.copy(
-      as.character(glue::glue("{output_dir}/tree-{vn}.html")),
-      as.character(glue::glue("{output_dir}/tree-{vn}-{Sys.Date()}.html")),
-      overwrite = TRUE
-    )
-
-    gtr1.1
   }
 
-  message("Generating figures")
-  pl <- suppressWarnings(
-    .plot_tree(
-      "logistic_growth_rate",
-      mut_regex = mutations,
+  suppressWarnings({
+    lgr_trees <- create_trees_curried(
+      branch_col = "logistic_growth_rate",
       colour_limits = c(-.5, .5)
     )
-  )
-  pldf <- pl$data
-  for (vn in setdiff(branch_cols, c("logistic_growth_rate"))) {
-    suppressWarnings(.plot_tree(vn, mut_regex = mutations))
-  }
+    save_trees(
+      lgr_trees,
+      branch_col = "logistic_growth_rate",
+      n_leaves = n_leaves,
+      output_dir = output_dir
+    )
+
+    for (branch_col in setdiff(branch_cols, c("logistic_growth_rate"))) {
+      tree_list <- create_trees_curried(
+        branch_col = branch_col,
+        colour_limits = range(td[[branch_col]])
+      )
+      save_trees(
+        tree_list,
+        branch_col = branch_col,
+        n_leaves = n_leaves,
+        output_dir = output_dir
+      )
+    }
+  })
+
+  pl <- lgr_trees[["with_interactivity_data"]]
+  pldf <- pl[["data"]]
 
   suppressWarnings({
     plot_cluster_sina(

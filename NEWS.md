@@ -1,3 +1,7 @@
+# tfpscanner 0.1.7 _2022-11-09_
+
+- Separate the function for creating and saving tree plots from the `treeview` function
+
 # tfpscanner 0.1.6 _2022-11-09_
 
 - Split up the `.plot_tree` function into smaller components
