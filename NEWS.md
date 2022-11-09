@@ -1,3 +1,7 @@
+# tfpscanner 0.1.4 _2022-11-07_
+
+- Add `testthat` and `pre-commit` infrastructure
+
 # tfpscanner 0.1.3 _2022-11-01_
 
 - Integrate changes from mrc-ide repo with those in Jumping Rivers repo

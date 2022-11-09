@@ -243,12 +243,13 @@ treeview <- function(e0,
         limits = colour_limits,
         oob = scales::squish
       ) +
-      ggplot2::geom_point(ggplot2::aes_string(
-        color = vn,
-        size = "cluster_size",
-        shape = "as.factor(internal)"
-      ),
-      data = gtr1$data
+      ggplot2::geom_point(
+        ggplot2::aes_string(
+          color = vn,
+          size = "cluster_size",
+          shape = "as.factor(internal)"
+        ),
+        data = gtr1$data
       ) +
       ggplot2::scale_shape_manual(
         name = NULL,

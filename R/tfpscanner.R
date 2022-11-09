@@ -170,7 +170,9 @@ tfpscan <- function(tre,
 
   # data structures to quickly look up tree data
   # copied/adapted from treestructure
-  { # nolint
+  # nolint start
+  {
+    # nolint end
     n <- ape::Ntip(tre)
     nnode <- ape::Nnode(tre)
     poedges <- tre$edge[ape::postorder(tre), ]
@@ -325,33 +327,36 @@ tfpscan <- function(tre,
     })))
 
     p <- ggplot2::ggplot() +
-      ggplot2::geom_point(ggplot2::aes(
-        x = as.Date(lubridate::date_decimal(.data$time)),
-        y = .data$logodds,
-        size = n
-      ),
-      data = estdf
+      ggplot2::geom_point(
+        ggplot2::aes(
+          x = as.Date(lubridate::date_decimal(.data$time)),
+          y = .data$logodds,
+          size = n
+        ),
+        data = estdf
       ) +
       ggplot2::theme_minimal() +
       ggplot2::theme(legend.pos = "") +
       ggplot2::ylab("Relative cluster frequency (log odds)") +
       ggplot2::xlab("") +
       # ggtitle( paste0('Frequency of ', variable, '=', value) ) +
-      ggplot2::geom_path(ggplot2::aes(
-        x = as.Date(lubridate::date_decimal(.data$time)),
-        y = .data$estimated_logodds
-      ),
-      data = estdf,
-      color = "blue",
-      size = 1
+      ggplot2::geom_path(
+        ggplot2::aes(
+          x = as.Date(lubridate::date_decimal(.data$time)),
+          y = .data$estimated_logodds
+        ),
+        data = estdf,
+        color = "blue",
+        size = 1
       ) +
-      ggplot2::geom_ribbon(ggplot2::aes(
-        x = as.Date(lubridate::date_decimal(.data$time)),
-        ymin = .data$lb,
-        ymax = .data$ub
-      ),
-      data = estdf,
-      alpha = .25
+      ggplot2::geom_ribbon(
+        ggplot2::aes(
+          x = as.Date(lubridate::date_decimal(.data$time)),
+          ymin = .data$lb,
+          ymax = .data$ub
+        ),
+        data = estdf,
+        alpha = .25
       )
 
     p
@@ -363,7 +368,8 @@ tfpscan <- function(tre,
     if (is.null(ta)) {
       ta <- .get_comparator_sample(u)
     }
-    if (is.null(ta)) { # if still null, cant get good comparison
+    if (is.null(ta)) {
+      # if still null, cant get good comparison
       return(
         list(
           lgr = NA,
@@ -571,7 +577,8 @@ tfpscan <- function(tre,
     paste(knitr::kable(y, "simple"), collapse = "\n") # convert to string
   }
 
-  .cluster_tree <- function(tips) { # tr2, amd # tre?
+  .cluster_tree <- function(tips) {
+    # tr2, amd # tre?
     tr <- ape::keep.tip(tre, tips)
     gtr <- ggtree::ggtree(tr)
     mutlist <- strsplit(amd[match(tips, amd$sequence_name), ]$mutations, split = "\\|")
@@ -730,7 +737,8 @@ tfpscan <- function(tre,
       X <- cbind(X, t(clodds))
     }
     rownames(X) <- as.character(u)
-    if (u %in% report_nodes) { # print progress
+    if (u %in% report_nodes) {
+      # print progress
       i <- which(nodes == u)
       message(paste("Progress", round(100 * i / length(nodes)), "%"))
     }
@@ -739,15 +747,16 @@ tfpscan <- function(tre,
       dir.create(cldir, showWarnings = FALSE)
 
       # summary stat data
-      utils::write.csv(data.frame(statistic = t(X[1, c(
-        "logistic_growth_rate",
-        "simple_logistic_growth_rate",
-        "logistic_growth_rate_p",
-        "gam_logistic_growth_rate",
-        "simple_logistic_model_support",
-        "clock_outlier"
-      )])),
-      file = glue::glue("{cldir}/summary.csv")
+      utils::write.csv(
+        data.frame(statistic = t(X[1, c(
+          "logistic_growth_rate",
+          "simple_logistic_growth_rate",
+          "logistic_growth_rate_p",
+          "gam_logistic_growth_rate",
+          "simple_logistic_model_support",
+          "clock_outlier"
+        )])),
+        file = glue::glue("{cldir}/summary.csv")
       )
       # freq plot
       if (!is.null(lgs$plot)) {
