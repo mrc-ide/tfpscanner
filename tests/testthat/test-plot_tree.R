@@ -5,10 +5,10 @@ describe("save_trees", {
     with_heatmap = ggplot2::ggplot(),
     interactive = ggplot2::ggplot()
   )
+  branch_col <- "logistic_growth_rate"
 
   it("creates an .svg from the 'noninteractive' entry", {
     td <- withr::local_tempdir(pattern = "noninteractive-svg")
-    branch_col <- "logistic_growth_rate"
     output_path <- file.path(td, glue::glue("tree-{branch_col}-{Sys.Date()}.svg"))
 
     save_trees(tree_list, branch_col = branch_col, output_dir = td, n_leaves = 100)
@@ -18,7 +18,6 @@ describe("save_trees", {
 
   it("creates an .rds from the 'interactive' entry", {
     td <- withr::local_tempdir(pattern = "interactive-rds")
-    branch_col <- "logistic_growth_rate"
     output_path <- file.path(td, glue::glue("tree-{branch_col}-{Sys.Date()}.rds"))
 
     save_trees(tree_list, branch_col = branch_col, output_dir = td, n_leaves = 100)
