@@ -15,9 +15,8 @@
 #' @param   colours    Vector of colours.
 #' @param   colour_limits   Min and max values for the colours.
 #'
-#' @return  A list with several entries. Each entry is either a \code{ggtree} object
-#'   ("noninteractive", "with_interactivity_data", "with_heatmap", "interactive") or an
-#'   \code{htmlWidget} ("widget").
+#' @return  A list with several entries. Each entry is a \code{ggtree} object. The list names are
+#'   "noninteractive", "with_interactivity_data", "with_heatmap", "interactive".
 
 create_trees <- function(ggtree_data,
                          branch_col,
@@ -74,12 +73,6 @@ create_trees <- function(ggtree_data,
     shapes = shapes,
     colours = colours,
     colour_limits = colour_limits
-  )
-
-  tree_list$widget <- create_widget(
-    ggobj = tree_list[["interactive"]],
-    width_svg = 15,
-    height_svg = max(14, floor(n_leaves / 10))
   )
 
   tree_list
