@@ -265,14 +265,7 @@ treeview <- function(e0,
   pldf <- pl[["data"]]
 
   suppressWarnings({
-    plot_cluster_sina(
-      pldf,
-      output_dir = output_dir,
-      mut_regexp = mutations,
-      lineage_regexp = lineages
-    )
-
-    for (vn in setdiff(branch_cols, c("logistic_growth_rate"))) {
+    for (vn in unique(c("logistic_growth_rate", branch_cols))) {
       plot_cluster_sina(
         pldf,
         output_dir = output_dir,
