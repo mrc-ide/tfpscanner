@@ -220,60 +220,23 @@ treeview <- function(e0,
     if (is.null(colour_limits)) {
       colour_limits <- range(td[[vn]])
     }
-    gtr1 <- ggtree::ggtree(
-      dplyr::full_join(tr2,
-        td,
-        by = "node"
-      ),
-      ggplot2::aes_string(colour = vn),
-      ladderize = TRUE,
-      right = TRUE,
-      continuous = TRUE
-    )
-
     shapes <- c(
       Y = "\U2B24",
       N = "\U25C4"
     )
 
-    gtr1.1 <- gtr1 +
-      ggplot2::scale_color_gradientn(
-        name = gsub(vn, pattern = "_", replacement = " "),
-        colours = cols,
-        limits = colour_limits,
-        oob = scales::squish
-      ) +
-      ggplot2::geom_point(
-        ggplot2::aes_string(
-          color = vn,
-          size = "cluster_size",
-          shape = "as.factor(internal)"
-        ),
-        data = gtr1$data
-      ) +
-      ggplot2::scale_shape_manual(
-        name = NULL,
-        labels = NULL,
-        values = shapes
-      ) +
-      ggplot2::scale_size(
-        name = "Cluster size",
-        range = c(2, 16)
-      ) +
-      ggplot2::ggtitle(glue::glue("{Sys.Date()}, colour: {vn}")) +
-      ggplot2::theme(legend.position = "top")
+    ggtree_data <- dplyr::full_join(tr2, td, by = "node")
 
-    for (i in seq_along(lins)) {
-      if (!is.na(lin_nodes[i])) {
-        gtr1.1 <- gtr1.1 +
-          ggtree::geom_cladelabel(
-            node = lin_nodes[i],
-            label = lin_node_names[i],
-            offset = .00001,
-            colour = "black"
-          )
-      }
-    }
+    gtr1.1 <- create_noninteractive_ggtree(
+      ggtree_data = ggtree_data,
+      branch_col = vn,
+      lins = lins,
+      lin_nodes = lin_nodes,
+      lin_node_names = lin_node_names,
+      shapes = shapes,
+      colours = cols,
+      colour_limits = colour_limits
+    )
 
     ggplot2::ggsave(
       gtr1.1,
@@ -283,174 +246,35 @@ treeview <- function(e0,
       limitsize = FALSE
     )
 
-    # make mouseover info
-    ## standard meta data
-    ttdfs <- apply(gtr1.1$data, 1, FUN = function(x) {
-      z <- as.list(x)
-      lgr <- as.numeric(z$logistic_growth_rate)
-      y <- with(
-        z,
-        data.frame(
-          `Cluster ID` = glue::glue("#{cluster_id}"),
-          `Cluster size` = cluster_size,
-          `Date range` = date_range,
-          `Example sequence` = label,
-          `Logistic growth` = paste0(
-            ifelse(lgr > 0, "+", ""),
-            round(lgr * 100), "%"
-          ),
-          `Mol clock outlier` = clock_outlier,
-          # `Structure Z` = treestructure_z,
-          `Lineages` = lineages
-        )
-      )
-      y <- t(y)
-      colnames(y) <- ""
-      tryCatch(paste(knitr::kable(y, "simple"), collapse = "\n"),
-        error = function(e) paste(knitr::kable(y, "markdown"), collapse = "\n")
-      )
-    })
-
-
-    ## table with geo composition
-    ttregtabs <- gtr1.1$data$region_summary #
-    ## cocirc
-    ttcocirc <- gtr1.1$data$cocirc_summary #
-    ## defining muts
-    .sort.muts <- function(muts) {
-      if (length(muts) == 0) {
-        return("")
-      }
-      pre <- sapply(strsplit(muts, split = ":"), "[", 1)
-      upres <- sort(unique(pre))
-      do.call(c, lapply(upres, function(.pre) {
-        .muts <- muts[pre == .pre]
-        .muts1 <- sapply(strsplit(.muts,
-          split = ":"
-        ), "[", 2)
-        sites <- regmatches(
-          .muts1,
-          regexpr(.muts1,
-            pattern = "[0-9]+"
-          )
-        )
-        o <- order(as.numeric(sites))
-        .muts[o]
-      }))
-    }
-
-    ttdefmuts <- sapply(match(gtr1.1$data$cluster_id, sc0$cluster_id), function(isc0) {
-      if (is.na(isc0)) {
-        return("")
-      }
-      paste(
-        sep = "\n", "Cluster branch mutations:",
-        gsub(
-          x = tryCatch(
-            stringr::str_wrap(
-              paste(collapse = " ", .sort.muts(cmuts[[as.character(sc0$node_number[isc0])]]$defining)),
-              width = 60
-            ),
-            error = function(e) browser()
-          ),
-          pattern = " ",
-          replacement = ", "
-        ),
-        "\n"
-      )
-    }) # end of sapply
-
-    ttallmuts <- sapply(match(gtr1.1$data$cluster_id, sc0$cluster_id), function(isc0) {
-      if (is.na(isc0)) {
-        return("")
-      }
-      paste(
-        sep = "\n", "All mutations:",
-        gsub(
-          x = stringr::str_wrap(
-            paste(
-              collapse = " ",
-              .sort.muts(cmuts[[as.character(sc0$node_number[isc0])]]$all)
-            ),
-            width = 60
-          ),
-          pattern = " ",
-          replacement = ", "
-        ),
-        "\n"
-      )
-    }) # end of sapply
-
-    gtr1.1$data$defmuts <- ttdefmuts
-    gtr1.1$data$allmuts <- ttallmuts
-    if (!is.null(mut_regex)) {
-      # gtr1.1$data$label <- ''
-      for (mre in mut_regex) {
-        i <- which(grepl(gtr1.1$data$allmuts, pattern = mre))
-        # gtr1.1$data$label[i] <- '*'
-        gtr1.1$data[[mre]] <- grepl(gtr1.1$data$allmuts, pattern = mre)
-      }
-      # gtr1.1 <- gtr1.1 + geom_tiplab( size = 16, colour = 'red' )
-    }
-
-    genotype <- as.data.frame(gtr1.1$data[
-      gtr1.1$data$node <= ape::Ntip(tr2),
-      c("label", mut_regex)
-    ])
-    rownames(genotype) <- genotype$label
-    genotype <- genotype[, -1, drop = FALSE]
-
-    # make html widget
-    gtr1.1$data$mouseover <- sapply(seq_along(ttdfs), function(i) {
-      paste0("Statistics:\n", ttdfs[i],
-        "\n\nGeography:\n", ttregtabs[i],
-        "\n\nCo-circulating with:\n", ttcocirc[i],
-        "\n\n", ttdefmuts[i],
-        "\n", ttallmuts[i],
-        "\n",
-        collapse = "\n"
-      )
-    })
-    gtr1.1$data$colour_var <- gtr1.1$data[[vn]]
-    gtr1.2 <- ggtree::gheatmap(gtr1.1,
-      genotype,
-      width = heatmap_width,
-      offset = 0.0005,
-      colnames_angle = -90,
-      colnames_position = "top",
-      colnames_offset_y = heatmap_lab_offset,
-      legend_title = "Genotype"
+    gtr1.1 <- append_interactivity_data(
+      gtr1.1,
+      branch_col = vn,
+      sc0 = sc0,
+      cmuts = cmuts,
+      mut_regex = mut_regex
     )
 
-    gtr1.3 <- gtr1.2 +
-      ggiraph::geom_point_interactive(ggplot2::aes(
-        x = .data$x,
-        y = .data$y,
-        color = .data$colour_var,
-        tooltip = .data$mouseover,
-        data_id = .data$node,
-        size = .data$cluster_size + 1,
-        shape = as.factor(.data$internal)
-      )) +
-      ggplot2::scale_shape_manual(
-        name = NULL,
-        labels = NULL,
-        values = shapes
-      ) +
-      ggplot2::scale_size(
-        name = "Cluster size",
-        range = c(2, 16)
-      ) +
-      ggplot2::scale_color_gradientn(
-        name = stringr::str_to_title(gsub(vn,
-          pattern = "_",
-          replacement = " "
-        )),
-        colours = cols,
-        limits = colour_limits,
-        oob = scales::squish
-      ) +
-      ggplot2::theme(legend.position = "top")
+    genotype <- extract_genotype_data(
+      ggobj = gtr1.1,
+      n_leaves = ape::Ntip(tr2),
+      mut_regex = mut_regex
+    )
+
+    gtr1.2 <- append_heatmap(
+      ggobj = gtr1.1,
+      genotype = genotype,
+      heatmap_width = heatmap_width,
+      heatmap_lab_offset = heatmap_lab_offset
+    )
+
+    gtr1.3 <- create_interactive_ggtree(
+      gtr1.2,
+      branch_col = vn,
+      cluster_size_range = c(2, 16),
+      shapes = shapes,
+      colours = cols,
+      colour_limits = colour_limits
+    )
 
     pgtr1.3 <- create_widget(
       ggobj = gtr1.3,
@@ -458,11 +282,13 @@ treeview <- function(e0,
       height_svg = max(14, floor(ape::Ntip(tr2) / 10))
     )
 
-    htmlwidgets::saveWidget(pgtr1.3,
+    htmlwidgets::saveWidget(
+      pgtr1.3,
       file = as.character(glue::glue("{output_dir}/tree-{vn}.html")),
       title = glue::glue("SARS CoV 2 scan {Sys.Date()}")
     )
-    file.copy(as.character(glue::glue("{output_dir}/tree-{vn}.html")),
+    file.copy(
+      as.character(glue::glue("{output_dir}/tree-{vn}.html")),
       as.character(glue::glue("{output_dir}/tree-{vn}-{Sys.Date()}.html")),
       overwrite = TRUE
     )
@@ -471,11 +297,13 @@ treeview <- function(e0,
   }
 
   message("Generating figures")
-
-  pl <- suppressWarnings(.plot_tree("logistic_growth_rate",
-    mut_regex = mutations,
-    colour_limits = c(-.5, .5)
-  ))
+  pl <- suppressWarnings(
+    .plot_tree(
+      "logistic_growth_rate",
+      mut_regex = mutations,
+      colour_limits = c(-.5, .5)
+    )
+  )
   pldf <- pl$data
   for (vn in setdiff(branch_cols, c("logistic_growth_rate"))) {
     suppressWarnings(.plot_tree(vn, mut_regex = mutations))

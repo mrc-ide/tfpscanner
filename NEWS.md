@@ -1,7 +1,10 @@
+# tfpscanner 0.1.6 _2022-11-09_
+
+- Split up the `.plot_tree` function into smaller components
+
 # tfpscanner 0.1.5 _2022-11-07_
 
 - Separate the function for plotting `sina` cluster data from the `treeview` function
-
 
 # tfpscanner 0.1.4 _2022-11-07_
 
