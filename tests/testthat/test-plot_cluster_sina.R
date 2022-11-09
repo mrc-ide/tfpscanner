@@ -55,7 +55,10 @@ describe("get_mutation_and_lineage", {
   })
   it("is just an underscore if neither regexp pattern is specified", {
     ml <- get_mutation_and_lineage(df, mut_regexp = NULL, lineage_regexp = NULL)
-    c("_", "_", "_")
+    expect_equal(
+      ml,
+      c("_", "_", "_")
+    )
   })
   it("includes a dot-separated mutation string", {
     ml <- get_mutation_and_lineage(
