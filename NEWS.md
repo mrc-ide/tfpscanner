@@ -1,3 +1,12 @@
+# tfpscanner 0.2.0 _2022-11-09_
+
+- Breaking change: `htmlwidget`s are no longer saved to file by `treeview()`
+- Breaking change: date of creation is absent from the "tree-..." files created by `treeview()`
+- Breaking change: `create_trees()` no longer creates `htmlwidget` tree-views
+- `treeview()` now saves `ggtree` objects to `tree-xyz.rds` files, these can be converted to
+  `htmlwidgets` using `ggiraph::girafe`
+- `save_trees()` returns the file paths for any files that it creates
+
 # tfpscanner 0.1.7 _2022-11-09_
 
 - Separate the function for creating and saving tree plots from the `treeview` function
