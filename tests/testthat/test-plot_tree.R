@@ -15,4 +15,14 @@ describe("save_trees", {
 
     expect_true(file.exists(output_path))
   })
+
+  it("creates an .rds from the 'interactive' entry", {
+    td <- withr::local_tempdir(pattern = "interactive-rds")
+    branch_col <- "logistic_growth_rate"
+    output_path <- file.path(td, glue::glue("tree-{branch_col}-{Sys.Date()}.rds"))
+
+    save_trees(tree_list, branch_col = branch_col, output_dir = td, n_leaves = 100)
+
+    expect_true(file.exists(output_path))
+  })
 })
