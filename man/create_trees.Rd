@@ -43,9 +43,8 @@ vector of node numbers, these correspond to nodes in \code{ggtree_data$node}.
 \item{colour_limits}{Min and max values for the colours.}
 }
 \value{
-A list with several entries. Each entry is either a \code{ggtree} object
-  ("noninteractive", "with_interactivity_data", "with_heatmap", "interactive") or an
-  \code{htmlWidget} ("widget").
+A list with several entries. Each entry is a \code{ggtree} object. The list names are
+  "noninteractive", "with_interactivity_data", "with_heatmap", "interactive".
 }
 \description{
 Make tree views for the mutation / lineage data

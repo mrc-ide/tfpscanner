@@ -50,6 +50,7 @@ stringr
 styler
 sublicense
 summarised
+svglite
 SystemRequirements
 testthat
 tfpscanner
@@ -63,3 +64,4 @@ uk
 visualisations
 volz
 Volz
+withr

@@ -1,6 +1,6 @@
 Package: tfpscanner
 Title: Transmission fitness polymorphism scanner 
-Version: 0.1.7
+Version: 0.2.0
 Date: 2022-11-09
 Author: Erik Volz, Olivia Boyd
 Maintainer: Erik Volz <e.volz@imperial.ac.uk>
@@ -31,7 +31,9 @@ Imports:
   utils
 Suggests: 
     doMPI,
-    testthat (>= 3.0.0)
+    svglite,
+    testthat (>= 3.0.0),
+    withr
 Remotes: 
   emvolz-phylodynamics/mlesky
 SystemRequirements: libopenmpi-dev
