@@ -113,7 +113,7 @@ jobs:
 
       - name: Install lintr
         run: |
-          remotes::install("lintr")
+          remotes::install_cran("lintr")
 
       - name: Lint
         run: lintr::lint_package()
