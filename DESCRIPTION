@@ -39,5 +39,5 @@ Remotes:
 SystemRequirements: libopenmpi-dev
 Encoding: UTF-8
 License: MIT + file LICENSE
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.2
 Config/testthat/edition: 3
