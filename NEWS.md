@@ -1,3 +1,8 @@
+# tfpscanner 0.2.1 _2022-12-06_
+
+- "Cluster sina plot"s can be saved in either `html` (as an htmlwidget) or `rds` (as a ggplot2
+  object) files
+
 # tfpscanner 0.2.0 _2022-11-09_
 
 - Breaking change: `htmlwidget`s are no longer saved to file by `treeview()`
