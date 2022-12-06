@@ -30,13 +30,15 @@ logistic growth rate plot will always be produced.}
 not exist.}
 
 \item{output_format}{String (either \code{rds}, \code{html} or both). Default: both. In which
-format(s) should the sina-cluster plots be saved?}
+format(s) should the interactive plots be saved? For \code{rds}, a \code{ggtree} or
+\code{ggplot2} object will be placed in \code{rds} files. For \code{html}, \code{htmlwidget}s
+will be placed in a \code{html} file.}
 
 \item{heatmap_width, heatmap_lab_offset}{Width and label-offset parameters for the constructed
 heatmap.}
 }
 \value{
-A ggtree plot
+A \code{ggtree} plot.
 }
 \description{
 This will produce a set of html widgets which will highlight by colour and tooltips statistics

@@ -12,13 +12,15 @@
 #' @param output_dir Outputs will be saved in this directory. Will create the directory if it does
 #'   not exist.
 #' @param output_format String (either \code{rds}, \code{html} or both). Default: both. In which
-#'   format(s) should the sina-cluster plots be saved?
+#'   format(s) should the interactive plots be saved? For \code{rds}, a \code{ggtree} or
+#'   \code{ggplot2} object will be placed in \code{rds} files. For \code{html}, \code{htmlwidget}s
+#'   will be placed in a \code{html} file.
 #' @param heatmap_width,heatmap_lab_offset Width and label-offset parameters for the constructed
 #'   heatmap.
 #'
 #' @importFrom rlang .data
 #'
-#' @return A ggtree plot
+#' @return A \code{ggtree} plot.
 #'
 #' @export
 
@@ -251,7 +253,8 @@ treeview <- function(e0,
       lgr_trees,
       branch_col = "logistic_growth_rate",
       n_leaves = n_leaves,
-      output_dir = output_dir
+      output_dir = output_dir,
+      output_format = output_format
     )
 
     for (branch_col in setdiff(branch_cols, c("logistic_growth_rate"))) {
@@ -263,7 +266,8 @@ treeview <- function(e0,
         tree_list,
         branch_col = branch_col,
         n_leaves = n_leaves,
-        output_dir = output_dir
+        output_dir = output_dir,
+        output_format = output_format
       )
     }
   })
