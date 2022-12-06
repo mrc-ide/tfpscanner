@@ -85,6 +85,10 @@ create_trees <- function(ggtree_data,
 #' @param   branch_col   Scalar string. The name of the statistic that is under study here (e.g.,
 #'   "logistic_growth_rate" or "clock_outlier"). This name will be used in the output file paths.
 #' @param   output_dir   Scalar string. The directory where the plots will be saved.
+#' @param   output_format   Scalar string (either \code{rds} or \code{html}). Which file format
+#'   should the interactive tree plot be placed? For \code{rds}, the default, a \code{ggtree} object
+#'   will be placed in an \code{rds} file. For \code{html}, an htmlwidget will be placed in a
+#'   \code{html} file.
 #' @param   include_date   Boolean. Should the file-paths include the current date?
 #' @inheritParams   create_trees
 #'
@@ -94,7 +98,10 @@ save_trees <- function(tree_list,
                        branch_col,
                        n_leaves,
                        output_dir,
+                       output_format = c("rds", "html"),
                        include_date = FALSE) {
+  output_format <- match.arg(output_format)
+
   basename_prefix <- if (include_date) {
     glue::glue("tree-{branch_col}-{Sys.Date()}")
   } else {
@@ -103,23 +110,39 @@ save_trees <- function(tree_list,
 
   basenames <- c(
     noninteractive = glue::glue("{basename_prefix}.svg"),
-    interactive = glue::glue("{basename_prefix}.rds")
+    interactive = glue::glue("{basename_prefix}.{output_format}")
   )
   files <- file.path(output_dir, basenames)
   names(files) <- names(basenames)
 
+  plot_height <- max(14, floor(n_leaves / 10))
+
   ggplot2::ggsave(
     tree_list[["noninteractive"]],
     filename = files[["noninteractive"]],
-    height = max(14, floor(n_leaves / 10)),
+    height = plot_height,
     width = 16,
     limitsize = FALSE
   )
 
-  saveRDS(
-    tree_list[["interactive"]],
-    file = files[["interactive"]]
-  )
+  if (output_format == "rds") {
+    saveRDS(
+      tree_list[["interactive"]],
+      file = files[["interactive"]]
+    )
+  } else {
+    widget <- create_widget(
+      tree_list[["interactive"]],
+      width_svg = 15,
+      height_svg = plot_height
+    )
+
+    htmlwidgets::saveWidget(
+      widget,
+      file = files[["interactive"]],
+      title = glue::glue("SARS CoV 2 scan {Sys.Date()}")
+    )
+  }
 
   invisible(files)
 }
