@@ -112,8 +112,7 @@ jobs:
         shell: Rscript {0}
 
       - name: Install lintr
-        run: |
-          remotes::install_cran("lintr")
+        run: remotes::install_cran("lintr")
         shell: Rscript {0}
 
       - name: Lint
