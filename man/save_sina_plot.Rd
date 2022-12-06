@@ -4,7 +4,14 @@
 \alias{save_sina_plot}
 \title{Save a sina-cluster-plot to a file}
 \usage{
-save_sina_plot(ggobj, varx, output_dir, width_svg = 8, height_svg = 8)
+save_sina_plot(
+  ggobj,
+  varx,
+  output_dir,
+  output_format = c("rds", "html"),
+  width_svg = 8,
+  height_svg = 8
+)
 }
 \arguments{
 \item{ggobj}{\code{ggplot2} object. Contains the plot that is to be saved.}
@@ -13,7 +20,11 @@ save_sina_plot(ggobj, varx, output_dir, width_svg = 8, height_svg = 8)
 
 \item{output_dir}{File path. The directory where the plot will be stored.}
 
-\item{width_svg, height_svg}{The width and height of the plot.}
+\item{output_format}{Scalar string (either \code{rds} or \code{html}). In which format should
+the plot be saved? Default: \code{rds}.}
+
+\item{width_svg, height_svg}{The width and height of the plot (only used when
+\code{output_format == "html"}).}
 }
 \value{
 Invisibly returns the file path where the plot was saved

@@ -32,24 +32,34 @@ plot_cluster_sina <- function(pldf,
 #' @param   ggobj   \code{ggplot2} object. Contains the plot that is to be saved.
 #' @param   varx   Scalar string. Which variable is depicted in the plot?
 #' @param   output_dir   File path. The directory where the plot will be stored.
-#' @param   width_svg,height_svg   The width and height of the plot.
+#' @param   output_format   Scalar string (either \code{rds} or \code{html}). In which format should
+#'   the plot be saved? Default: \code{rds}.
+#' @param   width_svg,height_svg   The width and height of the plot (only used when
+#'   \code{output_format == "html"}).
 #'
 #' @return   Invisibly returns the file path where the plot was saved
 
 save_sina_plot <- function(ggobj,
                            varx,
                            output_dir,
+                           output_format = c("rds", "html"),
                            width_svg = 8,
                            height_svg = 8) {
-  file_path <- file.path(output_dir, glue::glue("sina-{varx}.html"))
+  output_format <- match.arg(output_format)
 
-  g1 <- create_widget(
-    ggobj = ggobj,
-    width_svg = width_svg,
-    height_svg = height_svg
-  )
+  file_path <- file.path(output_dir, glue::glue("sina-{varx}.{output_format}"))
 
-  htmlwidgets::saveWidget(g1, file = file_path)
+  if (output_format == "rds") {
+    saveRDS(ggobj, file = file_path)
+  } else {
+    g1 <- create_widget(
+      ggobj = ggobj,
+      width_svg = width_svg,
+      height_svg = height_svg
+    )
+
+    htmlwidgets::saveWidget(g1, file = file_path)
+  }
 
   invisible(file_path)
 }

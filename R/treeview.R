@@ -276,7 +276,8 @@ treeview <- function(e0,
       save_sina_plot(
         sina_plot,
         varx = vn,
-        output_dir = output_dir
+        output_dir = output_dir,
+        output_format = "rds"
       )
     }
   })
