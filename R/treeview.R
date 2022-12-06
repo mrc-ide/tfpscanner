@@ -266,12 +266,17 @@ treeview <- function(e0,
 
   suppressWarnings({
     for (vn in unique(c("logistic_growth_rate", branch_cols))) {
-      plot_cluster_sina(
+      sina_plot <- plot_cluster_sina(
         pldf,
-        output_dir = output_dir,
         varx = vn,
         mut_regexp = mutations,
         lineage_regexp = lineages
+      )
+
+      save_sina_plot(
+        sina_plot,
+        varx = vn,
+        output_dir = output_dir
       )
     }
   })

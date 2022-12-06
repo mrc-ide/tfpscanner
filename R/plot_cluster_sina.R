@@ -1,9 +1,6 @@
 #' Create a sina plot against lineage
 #'
-#' Side-effect: this function creates a plot and stores it to a file.
-#'
 #' @param pldf  Data-frame. The data element of a tree plot.
-#' @param output_dir  String. The directory within which the plot should be stored.
 #' @param varx  String. Which variable in \code{pldf} should be plotted on the y-axis.
 #' @param mut_regexp  String. Regular-expression(s) for restricting the plot to a subset of the rows
 #'   in \code{pldf}. Only rows with an "allmuts" entry that matches one of these regular expressions
@@ -11,9 +8,10 @@
 #' @param lineage_regexp  String. Regular-expression(s) for restricting the lineages that are
 #'   presented in the plot. Only those rows of \code{pldf} with a "lineage" entry that matches one
 #'   of these regular expressions will be presented. If NULL, all rows are presented.
+#'
+#' @return   A \code{ggplot2} object storing the sina-cluster plot.
 
 plot_cluster_sina <- function(pldf,
-                              output_dir,
                               varx = "logistic_growth_rate",
                               mut_regexp = "S:A222V",
                               lineage_regexp = NULL) {
@@ -24,17 +22,36 @@ plot_cluster_sina <- function(pldf,
     lineage_regexp = lineage_regexp
   )
 
-  p1 <- create_cluster_sina_ggplot(sc1, y_lab = varx)
+  create_cluster_sina_ggplot(sc1, y_lab = varx)
+}
+
+#' Save a sina-cluster-plot to a file
+#'
+#' Saves as either an htmlwidget (in a \code{html} file) or a ggplot object (in a \code{rds} file).
+#'
+#' @param   ggobj   \code{ggplot2} object. Contains the plot that is to be saved.
+#' @param   varx   Scalar string. Which variable is depicted in the plot?
+#' @param   output_dir   File path. The directory where the plot will be stored.
+#' @param   width_svg,height_svg   The width and height of the plot.
+#'
+#' @return   Invisibly returns the file path where the plot was saved
+
+save_sina_plot <- function(ggobj,
+                           varx,
+                           output_dir,
+                           width_svg = 8,
+                           height_svg = 8) {
+  file_path <- file.path(output_dir, glue::glue("sina-{varx}.html"))
 
   g1 <- create_widget(
-    ggobj = p1,
-    width_svg = 8,
-    height_svg = 8
+    ggobj = ggobj,
+    width_svg = width_svg,
+    height_svg = height_svg
   )
 
-  htmlwidgets::saveWidget(g1,
-    file = as.character(glue::glue("{output_dir}/sina-{varx}.html"))
-  )
+  htmlwidgets::saveWidget(g1, file = file_path)
+
+  invisible(file_path)
 }
 
 #' Reformats data for a tree-plot for presentation in a sina plot

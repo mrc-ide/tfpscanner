@@ -6,7 +6,6 @@
 \usage{
 plot_cluster_sina(
   pldf,
-  output_dir,
   varx = "logistic_growth_rate",
   mut_regexp = "S:A222V",
   lineage_regexp = NULL
@@ -14,8 +13,6 @@ plot_cluster_sina(
 }
 \arguments{
 \item{pldf}{Data-frame. The data element of a tree plot.}
-
-\item{output_dir}{String. The directory within which the plot should be stored.}
 
 \item{varx}{String. Which variable in \code{pldf} should be plotted on the y-axis.}
 
@@ -27,6 +24,9 @@ will be presented. If NULL, all rows are presented.}
 presented in the plot. Only those rows of \code{pldf} with a "lineage" entry that matches one
 of these regular expressions will be presented. If NULL, all rows are presented.}
 }
+\value{
+A \code{ggplot2} object storing the sina-cluster plot.
+}
 \description{
-Side-effect: this function creates a plot and stores it to a file.
+Create a sina plot against lineage
 }
