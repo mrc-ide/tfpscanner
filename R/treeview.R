@@ -25,8 +25,11 @@ treeview <- function(e0,
                      mutations = c("S:A222V", "S:Y145H", "N:Q9L", "S:E484K"),
                      lineages = c("AY\\.9", "AY\\.43", "AY\\.4\\.2"),
                      output_dir = "treeview",
+                     sina_output_format = c("rds", "html"),
                      heatmap_width = .075,
                      heatmap_lab_offset = -6) {
+  sina_output_format <- match.arg(sina_output_format)
+
   # require logistic growth rate, prevent non-empty
   branch_cols <- unique(c(
     "logistic_growth_rate",
@@ -277,7 +280,7 @@ treeview <- function(e0,
         sina_plot,
         varx = vn,
         output_dir = output_dir,
-        output_format = "rds"
+        output_format = sina_output_format
       )
     }
   })
