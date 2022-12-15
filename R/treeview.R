@@ -11,6 +11,8 @@
 #' @param lineages A set of lineage names which will be used to subdivide outputs in scatter plots.
 #' @param output_dir Outputs will be saved in this directory. Will create the directory if it does
 #'   not exist.
+#' @param sina_output_format String (either \code{rds}, \code{html} or both). In which formats
+#'   should the sina-cluster plots be saved?
 #' @param heatmap_width,heatmap_lab_offset Width and label-offset parameters for the constructed
 #'   heatmap.
 #'
@@ -28,7 +30,7 @@ treeview <- function(e0,
                      sina_output_format = c("rds", "html"),
                      heatmap_width = .075,
                      heatmap_lab_offset = -6) {
-  sina_output_format <- match.arg(sina_output_format)
+  sina_output_format <- match.arg(sina_output_format, several.ok = TRUE)
 
   # require logistic growth rate, prevent non-empty
   branch_cols <- unique(c(

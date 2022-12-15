@@ -32,12 +32,13 @@ plot_cluster_sina <- function(pldf,
 #' @param   ggobj   \code{ggplot2} object. Contains the plot that is to be saved.
 #' @param   varx   Scalar string. Which variable is depicted in the plot?
 #' @param   output_dir   File path. The directory where the plot will be stored.
-#' @param   output_format   Scalar string (either \code{rds} or \code{html}). In which format should
-#'   the plot be saved? Default: \code{rds}.
+#' @param   output_format   String (either \code{rds}, \code{html} or both). In which formats should
+#'   the plots be saved?
 #' @param   width_svg,height_svg   The width and height of the plot (only used when
 #'   \code{output_format == "html"}).
 #'
-#' @return   Invisibly returns the file path where the plot was saved
+#' @return   Invisibly returns the file paths (one for each output format) where the plots were
+#'   saved.
 
 save_sina_plot <- function(ggobj,
                            varx,
@@ -45,13 +46,7 @@ save_sina_plot <- function(ggobj,
                            output_format = c("rds", "html"),
                            width_svg = 8,
                            height_svg = 8) {
-  output_format <- match.arg(output_format)
-
-  file_path <- file.path(output_dir, glue::glue("sina-{varx}.{output_format}"))
-
-  if (output_format == "rds") {
-    saveRDS(ggobj, file = file_path)
-  } else {
+  save_widget <- function(file_path) {
     g1 <- create_widget(
       ggobj = ggobj,
       width_svg = width_svg,
@@ -61,7 +56,24 @@ save_sina_plot <- function(ggobj,
     htmlwidgets::saveWidget(g1, file = file_path)
   }
 
-  invisible(file_path)
+  output_format <- match.arg(output_format, several.ok = TRUE)
+
+  file_paths <- stats::setNames(
+    file.path(output_dir, glue::glue("sina-{varx}.{output_format}")),
+    output_format
+  )
+
+  for (fmt in output_format) {
+    file_path <- file_paths[fmt]
+
+    if (fmt == "rds") {
+      saveRDS(ggobj, file = file_path)
+    } else {
+      save_widget(file_path)
+    }
+  }
+
+  invisible(file_paths)
 }
 
 #' Reformats data for a tree-plot for presentation in a sina plot
