@@ -47,13 +47,11 @@ treeview <- function(e0,
     e0 <- readRDS(e0)
   }
   sc0 <- e0$Y
-  cmuts <- lapply(seq_len(nrow(sc0)), function(i) {
-    list(
-      defining = strsplit(sc0$defining_mutations[i], split = "\\|")[[1]],
-      all = strsplit(sc0$all_mutations[i], split = "\\|")[[1]]
-    )
-  })
-  names(cmuts) <- sc0$cluster_id
+
+  # 'cmuts' is a list. Each element has entries "defining" and "all". There is one entry for each
+  # node (row) in sc0
+  cmuts <- get_mutation_list(sc0)
+
   tr1 <- e0$tre
 
   stopifnot(all(branch_cols %in% colnames(e0$Y)))
