@@ -52,6 +52,10 @@ treeview <- function(e0,
   # node (row) in sc0
   cmuts <- get_mutation_list(sc0)
 
+  cmut_tables <- get_mutation_tables(sc0)
+  readr::write_csv(cmut_tables[["defining"]], file.path(output_dir, "defining_mutations.csv"))
+  readr::write_csv(cmut_tables[["all"]], file.path(output_dir, "all_mutations.csv"))
+
   tr1 <- e0$tre
 
   stopifnot(all(branch_cols %in% colnames(e0$Y)))

@@ -22,3 +22,28 @@ get_mutation_list <- function(sc0) {
 
   cmuts
 }
+
+#' Extract data.frames containing the 'defining' and 'all' mutations for each cluster
+#'
+#' @inheritParams   get_mutation_list
+#'
+#' @return   List of two data.frames with names "all" and "defining". These contain all mutations-
+#'   and just the defining mutations for each cluster in the phylogeny. The data.frames have
+#'   identical structure with column names \code{cluster_id} and \code{mutation}.
+
+get_mutation_tables <- function(sc0) {
+  mutation_list <- get_mutation_list(sc0)
+  defining_mutations <- purrr::map_df(
+    mutation_list, ~ tibble::tibble(mutation = .x[["defining"]]),
+    .id = "cluster_id"
+  )
+  all_mutations <- purrr::map_df(
+    mutation_list, ~ tibble::tibble(mutation = .x[["all"]]),
+    .id = "cluster_id"
+  )
+
+  list(
+    defining = defining_mutations,
+    all = all_mutations
+  )
+}

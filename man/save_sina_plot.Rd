@@ -20,14 +20,15 @@ save_sina_plot(
 
 \item{output_dir}{File path. The directory where the plot will be stored.}
 
-\item{output_format}{Scalar string (either \code{rds} or \code{html}). In which format should
-the plot be saved? Default: \code{rds}.}
+\item{output_format}{String (either \code{rds}, \code{html} or both). In which formats should
+the plots be saved?}
 
 \item{width_svg, height_svg}{The width and height of the plot (only used when
 \code{output_format == "html"}).}
 }
 \value{
-Invisibly returns the file path where the plot was saved
+Invisibly returns the file paths (one for each output format) where the plots were
+  saved.
 }
 \description{
 Saves as either an htmlwidget (in a \code{html} file) or a ggplot object (in a \code{rds} file).

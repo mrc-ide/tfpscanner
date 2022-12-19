@@ -10,6 +10,7 @@ treeview(
   mutations = c("S:A222V", "S:Y145H", "N:Q9L", "S:E484K"),
   lineages = c("AY\\\\.9", "AY\\\\.43", "AY\\\\.4\\\\.2"),
   output_dir = "treeview",
+  sina_output_format = c("rds", "html"),
   heatmap_width = 0.075,
   heatmap_lab_offset = -6
 )
@@ -27,6 +28,9 @@ logistic growth rate plot will always be produced.}
 
 \item{output_dir}{Outputs will be saved in this directory. Will create the directory if it does
 not exist.}
+
+\item{sina_output_format}{String (either \code{rds}, \code{html} or both). In which formats
+should the sina-cluster plots be saved?}
 
 \item{heatmap_width, heatmap_lab_offset}{Width and label-offset parameters for the constructed
 heatmap.}
