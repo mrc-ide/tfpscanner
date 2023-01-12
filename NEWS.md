@@ -1,3 +1,28 @@
+# tfpscanner 0.2.0 _2022-11-09_
+
+- Breaking change: `htmlwidget`s are no longer saved to file by `treeview()`
+- Breaking change: date of creation is absent from the "tree-..." files created by `treeview()`
+- Breaking change: `create_trees()` no longer creates `htmlwidget` tree-views
+- `treeview()` now saves `ggtree` objects to `tree-xyz.rds` files, these can be converted to
+  `htmlwidgets` using `ggiraph::girafe`
+- `save_trees()` returns the file paths for any files that it creates
+
+# tfpscanner 0.1.7 _2022-11-09_
+
+- Separate the function for creating and saving tree plots from the `treeview` function
+
+# tfpscanner 0.1.6 _2022-11-09_
+
+- Split up the `.plot_tree` function into smaller components
+
+# tfpscanner 0.1.5 _2022-11-07_
+
+- Separate the function for plotting `sina` cluster data from the `treeview` function
+
+# tfpscanner 0.1.4 _2022-11-07_
+
+- Add `testthat` and `pre-commit` infrastructure
+
 # tfpscanner 0.1.3 _2022-11-01_
 
 - Integrate changes from mrc-ide repo with those in Jumping Rivers repo
