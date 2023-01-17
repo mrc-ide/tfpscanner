@@ -32,8 +32,8 @@ plot_cluster_sina <- function(pldf,
 #' @param   ggobj   \code{ggplot2} object. Contains the plot that is to be saved.
 #' @param   varx   Scalar string. Which variable is depicted in the plot?
 #' @param   output_dir   File path. The directory where the plot will be stored.
-#' @param   output_format   String (either \code{rds}, \code{html} or both). In which formats should
-#'   the plots be saved?
+#' @param   output_format   String (either \code{rds}, \code{html} or both). Default: both. In
+#'   which file format(s) should the plots be saved?
 #' @param   width_svg,height_svg   The width and height of the plot (only used when
 #'   \code{output_format == "html"}).
 #'
