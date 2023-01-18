@@ -1,3 +1,10 @@
+# tfpscanner 0.2.2 _2023-01-18_
+
+- Interactive tree view plots can be saved in either `html` (as an htmlwidget) or `rds` (as a 
+  ggtree object) files
+- Cluster SINA plots and interactive tree view plots are saved as _both_ `html` and `rds` by
+  default
+
 # tfpscanner 0.2.1 _2022-12-06_
 
 - "Cluster sina plot"s can be saved in either `html` (as an htmlwidget) or `rds` (as a ggplot2
