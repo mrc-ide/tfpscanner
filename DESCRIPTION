@@ -16,7 +16,7 @@ Imports:
     ggplot2,
     ggtree,
     glue,
-    htmlwidgets,
+    htmlwidgets (>= 1.6.0),
     knitr,
     lubridate,
     mgcv,
