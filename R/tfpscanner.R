@@ -661,7 +661,7 @@ tfpscan <- function(tre,
     gtr1 <- gtr1 + ggtree::geom_tiplab(align = TRUE)
     gtr2 <- gtr1
 
-    if (length(allsegregating) < 100) {
+    if ((length(allsegregating) < 100) & (length(allsegregating) > 0)) {
       gtr2 <- ggtree::gheatmap(gtr1,
         as.data.frame(aas),
         width = .66,
