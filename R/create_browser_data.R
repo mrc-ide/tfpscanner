@@ -117,7 +117,7 @@ create_node_lookup <- function(widgetChoice, data_dir) {
     n_layers <- length(built$data)
     ids <- built$data[n_layers][[1]]["data_id"]
     tooltips <- built$data[n_layers][[1]]$tooltip
-    tooltip_ids <- suppressWarnings(readr::parse_number(tooltips))
+    tooltip_ids <- get_cluster_ID(tooltips)
   }
   ids$cluster_ids <- tooltip_ids
 
