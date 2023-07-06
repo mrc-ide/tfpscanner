@@ -1,3 +1,11 @@
+# tfpscanner 0.3.0 _2023-07-06_
+
+- Feature: function `create_browser_data()` was added to generate all treeview illustrations and
+  metadata required by the tfpbrowser app, this replaces the `update_data()` function in
+  {tfpbrowser}
+- Fix: `all_mutations.csv` and `defining_mutations.csv` are added to `./mutations` output directory
+  rather than `./treeview` subdirectory (as required by tfpbrowser)
+
 # tfpscanner 0.2.2 _2023-01-18_
 
 - Interactive tree view plots can be saved in either `html` (as an htmlwidget) or `rds` (as a 
