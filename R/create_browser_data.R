@@ -216,9 +216,9 @@ available_treeview <- function(data_dir) {
     )
   )
   all_trees <- as.character(sort(all_trees))
-  names(all_trees) <- all_trees %>%
-    stringr::str_replace_all("_|-|\\.rds", " ") %>%
-    stringr::str_trim() %>%
+  names(all_trees) <- all_trees |>
+    stringr::str_replace_all("_|-|\\.rds", " ") |>
+    stringr::str_trim() |>
     stringr::str_to_title()
   return(all_trees)
 }
