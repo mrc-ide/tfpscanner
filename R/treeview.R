@@ -11,12 +11,16 @@
 #' @param lineages A set of lineage names which will be used to subdivide outputs in scatter plots.
 #' @param output_dir Outputs will be saved in this directory. Will create the directory if it does
 #'   not exist.
+#' @param output_format String (either \code{rds}, \code{html} or both). Default: both. In which
+#'   format(s) should the interactive plots be saved? For \code{rds}, a \code{ggtree} or
+#'   \code{ggplot2} object will be placed in \code{rds} files. For \code{html}, \code{htmlwidget}s
+#'   will be placed in a \code{html} file.
 #' @param heatmap_width,heatmap_lab_offset Width and label-offset parameters for the constructed
 #'   heatmap.
 #'
 #' @importFrom rlang .data
 #'
-#' @return A ggtree plot
+#' @return A \code{ggtree} plot.
 #'
 #' @export
 
@@ -25,8 +29,11 @@ treeview <- function(e0,
                      mutations = c("S:A222V", "S:Y145H", "N:Q9L", "S:E484K"),
                      lineages = c("AY\\.9", "AY\\.43", "AY\\.4\\.2"),
                      output_dir = "treeview",
+                     output_format = c("rds", "html"),
                      heatmap_width = .075,
                      heatmap_lab_offset = -6) {
+  output_format <- match.arg(output_format, several.ok = TRUE)
+
   # require logistic growth rate, prevent non-empty
   branch_cols <- unique(c(
     "logistic_growth_rate",
@@ -42,13 +49,11 @@ treeview <- function(e0,
     e0 <- readRDS(e0)
   }
   sc0 <- e0$Y
-  cmuts <- lapply(seq_len(nrow(sc0)), function(i) {
-    list(
-      defining = strsplit(sc0$defining_mutations[i], split = "\\|")[[1]],
-      all = strsplit(sc0$all_mutations[i], split = "\\|")[[1]]
-    )
-  })
-  names(cmuts) <- sc0$cluster_id
+
+  # 'cmuts' is a list. Each element has entries "defining" and "all". There is one entry for each
+  # node (row) in sc0
+  cmuts <- get_mutation_list(sc0)
+
   tr1 <- e0$tre
 
   stopifnot(all(branch_cols %in% colnames(e0$Y)))
@@ -244,7 +249,8 @@ treeview <- function(e0,
       lgr_trees,
       branch_col = "logistic_growth_rate",
       n_leaves = n_leaves,
-      output_dir = output_dir
+      output_dir = output_dir,
+      output_format = output_format
     )
 
     for (branch_col in setdiff(branch_cols, c("logistic_growth_rate"))) {
@@ -256,7 +262,8 @@ treeview <- function(e0,
         tree_list,
         branch_col = branch_col,
         n_leaves = n_leaves,
-        output_dir = output_dir
+        output_dir = output_dir,
+        output_format = output_format
       )
     }
   })
@@ -266,12 +273,18 @@ treeview <- function(e0,
 
   suppressWarnings({
     for (vn in unique(c("logistic_growth_rate", branch_cols))) {
-      plot_cluster_sina(
+      sina_plot <- plot_cluster_sina(
         pldf,
-        output_dir = output_dir,
         varx = vn,
         mut_regexp = mutations,
         lineage_regexp = lineages
+      )
+
+      save_sina_plot(
+        sina_plot,
+        varx = vn,
+        output_dir = output_dir,
+        output_format = output_format
       )
     }
   })
