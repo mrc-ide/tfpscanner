@@ -202,6 +202,7 @@ create_noninteractive_ggtree <- function(ggtree_data,
       name = "Cluster size",
       range = c(2, 16)
     ) +
+    ggplot2::guides(shape = "none") +
     ggplot2::ggtitle(glue::glue("{Sys.Date()}, colour: {branch_col}")) +
     ggplot2::theme(legend.position = "top")
 
