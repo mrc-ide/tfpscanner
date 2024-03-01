@@ -4,14 +4,21 @@
 \alias{append_heatmap}
 \title{Adds a heatmap to the right of a ggtree object}
 \usage{
-append_heatmap(ggobj, genotype, heatmap_width = 1, heatmap_lab_offset = 0)
+append_heatmap(
+  ggobj,
+  genotype,
+  heatmap_width = 1,
+  heatmap_offset = 5,
+  heatmap_lab_offset = 0
+)
 }
 \arguments{
 \item{ggobj}{A ggtree object.}
 
 \item{genotype}{The heatmap data.}
 
-\item{heatmap_width, heatmap_lab_offset}{Parameters for positioning of the heatmap.}
+\item{heatmap_width, heatmap_offset, heatmap_lab_offset}{Parameters for positioning of the
+heatmap.}
 }
 \value{
 A \code{ggtree} / \code{gg} / \code{ggplot} object with an appended heatmap.

@@ -12,6 +12,7 @@ create_trees(
   sc0,
   cmuts,
   heatmap_width,
+  heatmap_offset,
   heatmap_lab_offset,
   mut_regex = NULL,
   colours = NULL,
@@ -34,7 +35,8 @@ vector of node numbers, these correspond to nodes in \code{ggtree_data$node}.
 
 \item{sc0, cmuts}{Data-frames.}
 
-\item{heatmap_width, heatmap_lab_offset}{Parameters for positioning of the heatmap.}
+\item{heatmap_width, heatmap_offset, heatmap_lab_offset}{Parameters for positioning of the
+heatmap.}
 
 \item{mut_regex}{Regular expression. Defines the mutations under study here.}
 
