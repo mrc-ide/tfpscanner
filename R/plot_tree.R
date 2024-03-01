@@ -66,7 +66,8 @@ create_trees <- function(ggtree_data,
     genotype = genotype,
     heatmap_width = heatmap_width,
     heatmap_offset = heatmap_offset,
-    heatmap_lab_offset = heatmap_lab_offset
+    heatmap_lab_offset = heatmap_lab_offset,
+    heatmap_fill = c("FALSE" = "grey90", "TRUE" = "grey70")
   )
 
   tree_list$interactive <- create_interactive_ggtree(
@@ -386,7 +387,8 @@ append_heatmap <- function(ggobj,
                            genotype,
                            heatmap_width = 1,
                            heatmap_offset = 5,
-                           heatmap_lab_offset = 0) {
+                           heatmap_lab_offset = 0,
+                           heatmap_fill = c("FALSE" = "grey85", "TRUE" = "grey50")) {
   ggtree::gheatmap(
     p = ggobj,
     data = genotype,
@@ -396,6 +398,9 @@ append_heatmap <- function(ggobj,
     colnames_position = "top",
     colnames_offset_y = heatmap_lab_offset
   ) +
+    ggplot2::scale_fill_manual(
+      values = heatmap_fill
+    ) +
     ggplot2::guides(
       fill = ggplot2::guide_legend(title = "Genotype", nrow = 2)
     )
