@@ -11,6 +11,8 @@ treeview(
   lineages = c("AY\\\\.9", "AY\\\\.43", "AY\\\\.4\\\\.2"),
   output_dir = "treeview",
   output_format = c("rds", "html"),
+  dendrogram_colours = c("#2166ac", "#738fc0", "#afbad4", "#e8e8e8", "#e0a9a4",
+    "#ce6964", "#b2182b"),
   heatmap_width = 0.075,
   heatmap_offset = 8,
   heatmap_lab_offset = -6,
@@ -35,6 +37,9 @@ not exist.}
 format(s) should the interactive plots be saved? For \code{rds}, a \code{ggtree} or
 \code{ggplot2} object will be placed in \code{rds} files. For \code{html}, \code{htmlwidget}s
 will be placed in a \code{html} file.}
+
+\item{dendrogram_colours}{Colours for the dendrogram statistics. Default is blue (low) to red
+(high) with a light-grey for the mid-point of the statistic range.}
 
 \item{heatmap_width, heatmap_offset}{Width relative to the tree and offset from the tree for the
 heatmap.}
