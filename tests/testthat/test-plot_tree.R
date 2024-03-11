@@ -33,7 +33,7 @@ describe("save_trees", {
 
     created_files <- save_trees(
       tree_list,
-      branch_col = branch_col, output_dir = td, n_leaves = 100
+      branch_col = branch_col, output_dir = td, width_svg = 16, height_svg = 14
     )
 
     expect_mapequal(created_files, expected_files)
@@ -54,7 +54,7 @@ describe("save_trees", {
 
     created_files <- save_trees(
       tree_list,
-      branch_col = branch_col, output_dir = td, n_leaves = 100,
+      branch_col = branch_col, output_dir = td, width_svg = 16, height_svg = 14,
       output_format = "html"
     )
 
@@ -77,7 +77,7 @@ describe("save_trees", {
 
     created_files <- save_trees(
       tree_list,
-      branch_col = branch_col, output_dir = td, n_leaves = 100,
+      branch_col = branch_col, output_dir = td, width_svg = 16, height_svg = 14,
       output_format = "rds"
     )
 
@@ -100,7 +100,7 @@ describe("save_trees", {
 
     created_files <- save_trees(
       tree_list,
-      branch_col = branch_col, output_dir = td, n_leaves = 100, include_date = TRUE
+      branch_col = branch_col, output_dir = td, width_svg = 16, height_svg = 14, include_date = TRUE
     )
 
     expect_mapequal(created_files, expected_files)

@@ -94,24 +94,23 @@ create_trees <- function(ggtree_data,
 #'   object will be placed in an \code{rds} file. For \code{html}, a \code{htmlwidget} will be
 #'   placed in a \code{html} file.
 #' @param   include_date   Boolean. Should the file-paths include the current date?
-#' @inheritParams   create_trees
+#' @param   height_svg,width_svg   Scalar numeric. Height/width of the generated plots. Passed on to
+#'   `ggplot2::ggsave(..., height, width)` and `ggiraph::girafe(..., height_svg, width_svg)`.
 #'
 #' @return   A named vector containing the file paths that were generated.
 
 save_trees <- function(tree_list,
                        branch_col,
-                       n_leaves,
                        output_dir,
                        output_format = c("rds", "html"),
-                       include_date = FALSE) {
+                       include_date = FALSE,
+                       height_svg = NULL,
+                       width_svg = NULL) {
   output_format <- match.arg(output_format, several.ok = TRUE)
   required_filetypes <- c(
     "noninteractive",
     c(rds = "interactive_rds", html = "interactive_html")[output_format]
   )
-
-  height_svg <- max(14, floor(n_leaves / 10))
-  width_svg <- 16
 
   basename_prefix <- if (include_date) {
     glue::glue("tree-{branch_col}-{Sys.Date()}")

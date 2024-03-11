@@ -250,6 +250,9 @@ treeview <- function(e0,
   }
 
   suppressWarnings({
+    height_svg <- max(14, floor(n_leaves / 10))
+    width_svg <- 16
+
     lgr_trees <- create_trees_curried(
       branch_col = "logistic_growth_rate",
       colour_limits = c(-.5, .5)
@@ -257,9 +260,10 @@ treeview <- function(e0,
     save_trees(
       lgr_trees,
       branch_col = "logistic_growth_rate",
-      n_leaves = n_leaves,
       output_dir = output_dir,
-      output_format = output_format
+      output_format = output_format,
+      height_svg = height_svg,
+      width_svg = width_svg
     )
 
     for (branch_col in setdiff(branch_cols, c("logistic_growth_rate"))) {
@@ -271,9 +275,10 @@ treeview <- function(e0,
       save_trees(
         tree_list,
         branch_col = branch_col,
-        n_leaves = n_leaves,
         output_dir = output_dir,
-        output_format = output_format
+        output_format = output_format,
+        height_svg = height_svg,
+        width_svg = width_svg
       )
     }
   })
