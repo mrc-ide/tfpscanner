@@ -10,11 +10,10 @@
 #'   \code{lins$node_names} a string vector giving the name of the lineage. For \code{nodes} and
 #'   \code{node_names} the order of entries matches that for \code{lins}.
 #' @param   sc0,cmuts   Data-frames.
-#' @param   heatmap_width,heatmap_offset,heatmap_lab_offset    Parameters for positioning of the
-#'   heatmap.
 #' @param   mut_regex   Regular expression. Defines the mutations under study here.
 #' @param   colours    Vector of colours.
 #' @param   colour_limits   Min and max values for the colours.
+#' @inheritParams   treeview
 #'
 #' @return  A list with several entries. Each entry is a \code{ggtree} object. The list names are
 #'   "noninteractive", "with_interactivity_data", "with_heatmap", "interactive".
@@ -28,6 +27,7 @@ create_trees <- function(ggtree_data,
                          heatmap_width,
                          heatmap_offset,
                          heatmap_lab_offset,
+                         heatmap_fill = c("FALSE" = "grey90", "TRUE" = "grey70"),
                          mut_regex = NULL,
                          colours = NULL,
                          colour_limits = NULL) {
@@ -67,7 +67,7 @@ create_trees <- function(ggtree_data,
     heatmap_width = heatmap_width,
     heatmap_offset = heatmap_offset,
     heatmap_lab_offset = heatmap_lab_offset,
-    heatmap_fill = c("FALSE" = "grey90", "TRUE" = "grey70")
+    heatmap_fill = heatmap_fill
   )
 
   tree_list$interactive <- create_interactive_ggtree(
@@ -388,7 +388,7 @@ append_heatmap <- function(ggobj,
                            heatmap_width = 1,
                            heatmap_offset = 5,
                            heatmap_lab_offset = 0,
-                           heatmap_fill = c("FALSE" = "grey85", "TRUE" = "grey50")) {
+                           heatmap_fill = c("FALSE" = "grey90", "TRUE" = "grey70")) {
   ggtree::gheatmap(
     p = ggobj,
     data = genotype,

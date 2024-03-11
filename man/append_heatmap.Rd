@@ -9,7 +9,8 @@ append_heatmap(
   genotype,
   heatmap_width = 1,
   heatmap_offset = 5,
-  heatmap_lab_offset = 0
+  heatmap_lab_offset = 0,
+  heatmap_fill = c(`FALSE` = "grey90", `TRUE` = "grey70")
 )
 }
 \arguments{
@@ -17,8 +18,14 @@ append_heatmap(
 
 \item{genotype}{The heatmap data.}
 
-\item{heatmap_width, heatmap_offset, heatmap_lab_offset}{Parameters for positioning of the
+\item{heatmap_width, heatmap_offset}{Width relative to the tree and offset from the tree for the
 heatmap.}
+
+\item{heatmap_lab_offset}{Label-offset parameter for the constructed heatmap.}
+
+\item{heatmap_fill}{Colours for filling the interior of the heatmap (which indicates the
+presence / absence of a particular genotype). By default this is light grey for `FALSE` and
+mid-grey for `TRUE`.}
 }
 \value{
 A \code{ggtree} / \code{gg} / \code{ggplot} object with an appended heatmap.
