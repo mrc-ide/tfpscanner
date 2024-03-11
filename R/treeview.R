@@ -263,9 +263,10 @@ treeview <- function(e0,
     )
 
     for (branch_col in setdiff(branch_cols, c("logistic_growth_rate"))) {
+      zero_centred_colour_limits <- c(-1, 1) * max(abs(td[[branch_col]]))
       tree_list <- create_trees_curried(
         branch_col = branch_col,
-        colour_limits = range(td[[branch_col]])
+        colour_limits = zero_centred_colour_limits
       )
       save_trees(
         tree_list,
