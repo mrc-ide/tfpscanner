@@ -118,7 +118,7 @@ save_trees <- function(tree_list,
     interactive_html = glue::glue("{basename_prefix}.html")
   )[required_filetypes]
 
-  files <- setNames(
+  files <- stats::setNames(
     file.path(output_dir, basenames),
     required_filetypes
   )
