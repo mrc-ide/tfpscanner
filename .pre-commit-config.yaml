@@ -34,6 +34,7 @@ repos:
           (.*/|)appveyor\.yml|
           (.*/|)NAMESPACE|
           (.*/|)renv/settings\.dcf|
+          (.*/|)renv/settings\.json|
           (.*/|)renv\.lock|
           (.*/|)WORDLIST|
           \.github/workflows/.*|

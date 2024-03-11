@@ -4,3 +4,5 @@
 ^\.Rproj\.user$
 ^\.github$
 ^\.pre-commit-config\.yaml$
+^renv$
+^renv\.lock$
