@@ -461,9 +461,7 @@ sort_mutations <- function(muts) {
   upres <- sort(unique(pre))
   sorted_mutations <- do.call(c, lapply(upres, function(.pre) {
     .muts <- muts[pre == .pre]
-    .muts1 <- sapply(strsplit(.muts,
-      split = ":"
-    ), "[", 2)
+    .muts1 <- sapply(strsplit(.muts, split = ":"), "[", 2)
     sites <- regmatches(
       .muts1,
       regexpr(.muts1,
