@@ -110,6 +110,9 @@ save_trees <- function(tree_list,
     c(rds = "interactive_rds", html = "interactive_html")[output_format]
   )
 
+  height_svg <- max(14, floor(n_leaves / 10))
+  width_svg <- 16
+
   basename_prefix <- if (include_date) {
     glue::glue("tree-{branch_col}-{Sys.Date()}")
   } else {
@@ -127,13 +130,11 @@ save_trees <- function(tree_list,
     required_filetypes
   )
 
-  plot_height <- max(14, floor(n_leaves / 10))
-
   ggplot2::ggsave(
     tree_list[["noninteractive"]],
     filename = files[["noninteractive"]],
-    height = plot_height,
-    width = 16,
+    height = height_svg,
+    width = width_svg,
     limitsize = FALSE
   )
 
@@ -147,8 +148,8 @@ save_trees <- function(tree_list,
   if ("html" %in% output_format) {
     widget <- create_widget(
       tree_list[["interactive"]],
-      width_svg = 15,
-      height_svg = plot_height
+      width_svg = width_svg,
+      height_svg = height_svg
     )
 
     htmlwidgets::saveWidget(
