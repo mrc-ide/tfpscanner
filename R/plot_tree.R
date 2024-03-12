@@ -390,9 +390,11 @@ append_heatmap <- function(ggobj,
     offset = 0.0005,
     colnames_angle = -90,
     colnames_position = "top",
-    colnames_offset_y = heatmap_lab_offset,
-    legend_title = "Genotype"
-  )
+    colnames_offset_y = heatmap_lab_offset
+  ) +
+    ggplot2::guides(
+      fill = ggplot2::guide_legend(title = "Genotype", nrow = 2)
+    )
 }
 
 #' Converts a \code{ggtree} object into a \code{ggiraph} object with interactive potential
