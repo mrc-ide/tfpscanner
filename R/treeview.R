@@ -15,8 +15,14 @@
 #'   format(s) should the interactive plots be saved? For \code{rds}, a \code{ggtree} or
 #'   \code{ggplot2} object will be placed in \code{rds} files. For \code{html}, \code{htmlwidget}s
 #'   will be placed in a \code{html} file.
-#' @param heatmap_width,heatmap_lab_offset Width and label-offset parameters for the constructed
+#' @param   dendrogram_colours   Colours for the dendrogram statistics. Default is blue (low) to red
+#'   (high) with a light-grey for the mid-point of the statistic range.
+#' @param heatmap_width,heatmap_offset   Width relative to the tree and offset from the tree for the
 #'   heatmap.
+#' @param heatmap_lab_offset   Label-offset parameter for the constructed heatmap.
+#' @param   heatmap_fill   Colours for filling the interior of the heatmap (which indicates the
+#'   presence / absence of a particular genotype). By default this is light grey for `FALSE` and
+#'   mid-grey for `TRUE`.
 #'
 #' @importFrom rlang .data
 #'
@@ -30,8 +36,13 @@ treeview <- function(e0,
                      lineages = c("AY\\.9", "AY\\.43", "AY\\.4\\.2"),
                      output_dir = "treeview",
                      output_format = c("rds", "html"),
+                     dendrogram_colours = c(
+                       "#2166ac", "#738fc0", "#afbad4", "#e8e8e8", "#e0a9a4", "#ce6964", "#b2182b"
+                     ),
                      heatmap_width = .075,
-                     heatmap_lab_offset = -6) {
+                     heatmap_offset = 8,
+                     heatmap_lab_offset = -6,
+                     heatmap_fill = c("FALSE" = "grey90", "TRUE" = "grey70")) {
   output_format <- match.arg(output_format, several.ok = TRUE)
 
   # require logistic growth rate, prevent non-empty
@@ -173,9 +184,6 @@ treeview <- function(e0,
     }
   }
 
-  # cols for continuous stats
-  cols <- rev(c("red", "orange", "green", "cyan", "blue"))
-
   # lineages for clade labels
   td$lineages1 <- sapply(strsplit(td$lineages, split = "\\|"), "[", 1)
   sc0$lineage1 <- sapply(strsplit(sc0$lineage, split = "\\|"), "[", 1)
@@ -234,13 +242,17 @@ treeview <- function(e0,
       sc0 = sc0,
       cmuts = cmuts,
       mut_regex = mutations,
-      colours = cols,
+      colours = dendrogram_colours,
       heatmap_width = heatmap_width,
+      heatmap_offset = heatmap_offset,
       heatmap_lab_offset = heatmap_lab_offset
     )
   }
 
   suppressWarnings({
+    height_svg <- max(14, floor(n_leaves / 10))
+    width_svg <- 16
+
     lgr_trees <- create_trees_curried(
       branch_col = "logistic_growth_rate",
       colour_limits = c(-.5, .5)
@@ -248,22 +260,25 @@ treeview <- function(e0,
     save_trees(
       lgr_trees,
       branch_col = "logistic_growth_rate",
-      n_leaves = n_leaves,
       output_dir = output_dir,
-      output_format = output_format
+      output_format = output_format,
+      height_svg = height_svg,
+      width_svg = width_svg
     )
 
     for (branch_col in setdiff(branch_cols, c("logistic_growth_rate"))) {
+      zero_centred_colour_limits <- c(-1, 1) * max(abs(td[[branch_col]]))
       tree_list <- create_trees_curried(
         branch_col = branch_col,
-        colour_limits = range(td[[branch_col]])
+        colour_limits = zero_centred_colour_limits
       )
       save_trees(
         tree_list,
         branch_col = branch_col,
-        n_leaves = n_leaves,
         output_dir = output_dir,
-        output_format = output_format
+        output_format = output_format,
+        height_svg = height_svg,
+        width_svg = width_svg
       )
     }
   })

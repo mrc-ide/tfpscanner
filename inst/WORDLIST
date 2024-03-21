@@ -22,7 +22,9 @@ foreach
 generalised
 ggiraph
 ggplot
+ggsave
 ggtree
+girafe
 grey
 htmlwidget
 htmlwidgets
@@ -61,6 +63,7 @@ stringr
 styler
 sublicense
 summarised
+svg
 svglite
 SystemRequirements
 testthat

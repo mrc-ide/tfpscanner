@@ -12,7 +12,9 @@ create_trees(
   sc0,
   cmuts,
   heatmap_width,
+  heatmap_offset,
   heatmap_lab_offset,
+  heatmap_fill = c(`FALSE` = "grey90", `TRUE` = "grey70"),
   mut_regex = NULL,
   colours = NULL,
   colour_limits = NULL
@@ -34,7 +36,14 @@ vector of node numbers, these correspond to nodes in \code{ggtree_data$node}.
 
 \item{sc0, cmuts}{Data-frames.}
 
-\item{heatmap_width, heatmap_lab_offset}{Parameters for positioning of the heatmap.}
+\item{heatmap_width, heatmap_offset}{Width relative to the tree and offset from the tree for the
+heatmap.}
+
+\item{heatmap_lab_offset}{Label-offset parameter for the constructed heatmap.}
+
+\item{heatmap_fill}{Colours for filling the interior of the heatmap (which indicates the
+presence / absence of a particular genotype). By default this is light grey for `FALSE` and
+mid-grey for `TRUE`.}
 
 \item{mut_regex}{Regular expression. Defines the mutations under study here.}
 

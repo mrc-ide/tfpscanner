@@ -10,10 +10,10 @@
 #'   \code{lins$node_names} a string vector giving the name of the lineage. For \code{nodes} and
 #'   \code{node_names} the order of entries matches that for \code{lins}.
 #' @param   sc0,cmuts   Data-frames.
-#' @param   heatmap_width,heatmap_lab_offset    Parameters for positioning of the heatmap.
 #' @param   mut_regex   Regular expression. Defines the mutations under study here.
 #' @param   colours    Vector of colours.
 #' @param   colour_limits   Min and max values for the colours.
+#' @inheritParams   treeview
 #'
 #' @return  A list with several entries. Each entry is a \code{ggtree} object. The list names are
 #'   "noninteractive", "with_interactivity_data", "with_heatmap", "interactive".
@@ -25,7 +25,9 @@ create_trees <- function(ggtree_data,
                          sc0,
                          cmuts,
                          heatmap_width,
+                         heatmap_offset,
                          heatmap_lab_offset,
+                         heatmap_fill = c("FALSE" = "grey90", "TRUE" = "grey70"),
                          mut_regex = NULL,
                          colours = NULL,
                          colour_limits = NULL) {
@@ -63,7 +65,9 @@ create_trees <- function(ggtree_data,
     ggobj = tree_list[["with_interactivity_data"]],
     genotype = genotype,
     heatmap_width = heatmap_width,
-    heatmap_lab_offset = heatmap_lab_offset
+    heatmap_offset = heatmap_offset,
+    heatmap_lab_offset = heatmap_lab_offset,
+    heatmap_fill = heatmap_fill
   )
 
   tree_list$interactive <- create_interactive_ggtree(
@@ -90,16 +94,18 @@ create_trees <- function(ggtree_data,
 #'   object will be placed in an \code{rds} file. For \code{html}, a \code{htmlwidget} will be
 #'   placed in a \code{html} file.
 #' @param   include_date   Boolean. Should the file-paths include the current date?
-#' @inheritParams   create_trees
+#' @param   height_svg,width_svg   Scalar numeric. Height/width of the generated plots. Passed on to
+#'   `ggplot2::ggsave(..., height, width)` and `ggiraph::girafe(..., height_svg, width_svg)`.
 #'
 #' @return   A named vector containing the file paths that were generated.
 
 save_trees <- function(tree_list,
                        branch_col,
-                       n_leaves,
                        output_dir,
                        output_format = c("rds", "html"),
-                       include_date = FALSE) {
+                       include_date = FALSE,
+                       height_svg = NULL,
+                       width_svg = NULL) {
   output_format <- match.arg(output_format, several.ok = TRUE)
   required_filetypes <- c(
     "noninteractive",
@@ -118,18 +124,16 @@ save_trees <- function(tree_list,
     interactive_html = glue::glue("{basename_prefix}.html")
   )[required_filetypes]
 
-  files <- setNames(
+  files <- stats::setNames(
     file.path(output_dir, basenames),
     required_filetypes
   )
 
-  plot_height <- max(14, floor(n_leaves / 10))
-
   ggplot2::ggsave(
     tree_list[["noninteractive"]],
     filename = files[["noninteractive"]],
-    height = plot_height,
-    width = 16,
+    height = height_svg,
+    width = width_svg,
     limitsize = FALSE
   )
 
@@ -143,8 +147,8 @@ save_trees <- function(tree_list,
   if ("html" %in% output_format) {
     widget <- create_widget(
       tree_list[["interactive"]],
-      width_svg = 15,
-      height_svg = plot_height
+      width_svg = width_svg,
+      height_svg = height_svg
     )
 
     htmlwidgets::saveWidget(
@@ -202,6 +206,7 @@ create_noninteractive_ggtree <- function(ggtree_data,
       name = "Cluster size",
       range = c(2, 16)
     ) +
+    ggplot2::guides(shape = "none") +
     ggplot2::ggtitle(glue::glue("{Sys.Date()}, colour: {branch_col}")) +
     ggplot2::theme(legend.position = "top")
 
@@ -381,17 +386,24 @@ extract_genotype_data <- function(ggobj,
 append_heatmap <- function(ggobj,
                            genotype,
                            heatmap_width = 1,
-                           heatmap_lab_offset = 0) {
+                           heatmap_offset = 5,
+                           heatmap_lab_offset = 0,
+                           heatmap_fill = c("FALSE" = "grey90", "TRUE" = "grey70")) {
   ggtree::gheatmap(
     p = ggobj,
     data = genotype,
     width = heatmap_width,
-    offset = 0.0005,
+    offset = heatmap_offset,
     colnames_angle = -90,
     colnames_position = "top",
-    colnames_offset_y = heatmap_lab_offset,
-    legend_title = "Genotype"
-  )
+    colnames_offset_y = heatmap_lab_offset
+  ) +
+    ggplot2::scale_fill_manual(
+      values = heatmap_fill
+    ) +
+    ggplot2::guides(
+      fill = ggplot2::guide_legend(title = "Genotype", nrow = 2)
+    )
 }
 
 #' Converts a \code{ggtree} object into a \code{ggiraph} object with interactive potential
@@ -461,9 +473,7 @@ sort_mutations <- function(muts) {
   upres <- sort(unique(pre))
   sorted_mutations <- do.call(c, lapply(upres, function(.pre) {
     .muts <- muts[pre == .pre]
-    .muts1 <- sapply(strsplit(.muts,
-      split = ":"
-    ), "[", 2)
+    .muts1 <- sapply(strsplit(.muts, split = ":"), "[", 2)
     sites <- regmatches(
       .muts1,
       regexpr(.muts1,
