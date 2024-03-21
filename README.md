@@ -62,7 +62,7 @@ Then, to set up all the remaining files required by tfpbrowser, you would make t
 function call:
 
 ```
-tfpscanner::create_browser_files(
+tfpscanner::create_browser_data(
   e0 = "tfpbrowser_files/scanner_output/scanner-env-2023-07-05.rds",
   output_dir = "tfpbrowser_files",
   [any additional arguments to be passed on to `tfpscanner::treeview()`]

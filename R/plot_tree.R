@@ -118,7 +118,7 @@ save_trees <- function(tree_list,
     interactive_html = glue::glue("{basename_prefix}.html")
   )[required_filetypes]
 
-  files <- setNames(
+  files <- stats::setNames(
     file.path(output_dir, basenames),
     required_filetypes
   )
@@ -461,9 +461,7 @@ sort_mutations <- function(muts) {
   upres <- sort(unique(pre))
   sorted_mutations <- do.call(c, lapply(upres, function(.pre) {
     .muts <- muts[pre == .pre]
-    .muts1 <- sapply(strsplit(.muts,
-      split = ":"
-    ), "[", 2)
+    .muts1 <- sapply(strsplit(.muts, split = ":"), "[", 2)
     sites <- regmatches(
       .muts1,
       regexpr(.muts1,

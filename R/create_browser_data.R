@@ -12,6 +12,10 @@
 create_browser_data <- function(e0,
                                 output_dir,
                                 ...) {
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir)
+  }
+
   dirs <- list(
     treeview = file.path(output_dir, "treeview"),
     mutations = file.path(output_dir, "mutations"),

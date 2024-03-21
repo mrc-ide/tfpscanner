@@ -591,28 +591,30 @@ tfpscan <- function(tre,
     allsegregating <- Reduce(union, segregatingmut)
 
     # remove stops from allseg
-    allsegregating <- allsegregating[!grepl(allsegregating,
-      pattern = "[*]$"
-    )]
-    allsegregating <- allsegregating[!grepl(allsegregating,
-      pattern = ":[*]"
-    )]
+    allsegregating <- allsegregating[
+      !grepl(allsegregating, pattern = "[*]$")
+    ]
+    allsegregating <- allsegregating[
+      !grepl(allsegregating, pattern = ":[*]")
+    ]
     annots <- rep("", ape::Ntip(tr) + ape::Nnode(tr))
 
     if (length(allsegregating) > 0) {
-      allseg1 <- substr(regmatches(allsegregating, regexpr(allsegregating,
-        pattern = ":[A-Z]"
-      )), 2, 2)
-      allseg2 <- regmatches(allsegregating, regexpr(allsegregating,
-        pattern = "[A-Z*]$"
-      ))
-      sites_post <- regmatches(allsegregating, regexpr(allsegregating,
-        pattern = ":.*$"
-      ))
+      allseg1 <- substr(
+        regmatches(allsegregating, regexpr(allsegregating, pattern = ":[A-Z]")),
+        2,
+        2
+      )
+      allseg2 <- regmatches(
+        allsegregating, regexpr(allsegregating, pattern = "[A-Z*]$")
+      )
+      sites_post <- regmatches(
+        allsegregating, regexpr(allsegregating, pattern = ":.*$")
+      )
       sites_post <- substr(sites_post, 3, nchar(sites_post) - 1)
-      sites_pre <- regmatches(allsegregating, regexpr(allsegregating,
-        pattern = "^.*:"
-      ))
+      sites_pre <- regmatches(
+        allsegregating, regexpr(allsegregating, pattern = "^.*:")
+      )
       sites <- paste0(sites_pre, sites_post)
 
       aas <- c()
@@ -661,7 +663,7 @@ tfpscan <- function(tre,
     gtr1 <- gtr1 + ggtree::geom_tiplab(align = TRUE)
     gtr2 <- gtr1
 
-    if ((length(allsegregating) < 100) & (length(allsegregating) > 0)) {
+    if ((length(allsegregating) < 100) && (length(allsegregating) > 0)) {
       gtr2 <- ggtree::gheatmap(gtr1,
         as.data.frame(aas),
         width = .66,
